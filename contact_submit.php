@@ -2,7 +2,7 @@
 header('Content-Type: application/json');
 
 // 1. Connect to your database (update credentials as needed)
-$conn = new mysqli("localhost", "root", "", "nandyal_dial"); // <-- Change to your DB name
+$conn = new mysqli("localhost", "root", "1234", "nandyal_dial"); // <-- Change to your DB name
 
 if ($conn->connect_error) {
     echo json_encode(['success' => false, 'message' => 'Database connection failed.']);

@@ -74,6 +74,7 @@
       <a href="new_services.php">Services</a>
       <a href="new_categories.php">Categories</a>
       <a href="new_add_services.php">Add Service</a>
+      <a href="contact.php">Contact Us</a>
       <?php
       if(isset($_SESSION['user_name'])){
         ?>

@@ -215,9 +215,7 @@
 </head>
 <body>
 
-  <!-- Header Include -->
-  <div id="include-header"></div>
-       
+       <?php include 'new_header.php'; ?>
     <!-- Hero Section -->
     <section class="hero-section">
         <div class="container">
@@ -532,7 +530,7 @@
 
         // Load includes and setup header/footer when DOM is ready
         document.addEventListener("DOMContentLoaded", async () => {
-            await includeHTML("include-header", "header.html");
+            // await includeHTML("include-header", "header.html");
             await includeHTML("include-footer", "footer.html");
             // Wait for header to be in DOM, then setup header behavior
             setTimeout(setupHeaderBehavior, 200);
