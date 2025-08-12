@@ -1,0 +1,156 @@
+<head>
+    <meta charset="UTF-8">
+    <title>Find Services Nearby</title>
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+
+    <style>
+        body {
+            font-family: 'Segoe UI', sans-serif;
+            background: linear-gradient(to right, #8360c3, #2ebf91);
+            margin: 0;
+            padding: 0;
+        }
+        article {
+            margin-top: 10px;
+            padding: 1rem;
+            text-align: center;
+            background-color: #fff;
+            color: #2c3e50;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+        }
+        .container {
+            max-width: 1100px;
+            margin: auto;
+            padding: 2rem;
+        }
+        form {
+            display: flex;
+            gap: 1rem;
+            justify-content: center;
+            margin-bottom: 2rem;
+            flex-wrap: wrap;
+        }
+        input[type="text"] {
+            padding: 0.7rem;
+            border-radius: 8px;
+            border: none;
+            outline: none;
+            font-size: 1rem;
+        }
+        button {
+            background-color: #2ebf91;
+            color: white;
+            padding: 0.7rem 1.5rem;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 1rem;
+        }
+        .card {
+            display: flex;
+            flex-wrap: wrap;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+            padding: 15px;
+            align-items: center;
+            gap: 20px;
+            }
+
+                .card img {
+                width: 100px;
+                height: 100px;
+                object-fit: cover;
+                border-radius: 8px;
+                }
+
+                .card-body {
+                flex: 1;
+                min-width: 220px;
+                }
+
+                .card-body h2 {
+                margin: 0;
+                font-size: 18px;
+                font-weight: 600;
+                }
+
+                .card-body p {
+                margin: 4px 0;
+                font-size: 14px;
+                color: #555;
+                }
+
+                .services {
+                font-size: 13px;
+                color: #666;
+                }
+
+                .phone-icons a {
+                text-decoration: none;
+                margin-right: 10px;
+                font-size: 15px;
+                }
+
+                .phone-icons a i {
+                margin-right: 5px;
+                }
+
+                .rating {
+                color: #f1c40f;
+                font-size: 14px;
+                }
+
+                .status {
+                background: #e3fcec;
+                color: green;
+                display: inline-block;
+                font-size: 13px;
+                padding: 3px 10px;
+                border-radius: 20px;
+                margin-bottom: 5px;
+                }
+
+                .actions {
+                display: flex;
+                flex-direction: column;
+                gap: 10px;
+                }
+
+                .btn {
+                padding: 6px 10px;
+                border: none;
+                border-radius: 20px;
+                font-size: 13px;
+                cursor: pointer;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                }
+
+                .view-btn { background: #007bff; color: white; }
+                .map-btn  { background: #e74c3c; color: white; }
+                .share-btn{ background: #ddd; color: #333; }
+
+                @media (max-width: 600px) {
+                .card {
+                    flex-direction: column;
+                    align-items: flex-start;
+                }
+                .actions {
+                    flex-direction: row;
+                    width: 100%;
+                    justify-content: space-between;
+                }
+                .card img {
+                    width: 100%;
+                    max-width: 100%;
+                }
+                }
+                .distance {
+                    font-weight: bold;
+                    color: #27ae60;
+                }
+    </style>
+</head>

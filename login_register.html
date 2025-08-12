@@ -1,0 +1,2619 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ServiceHub - Login & Register</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .auth-container {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+            width: 100%;
+            max-width: 450px;
+            padding: 40px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .auth-container::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: linear-gradient(90deg, #667eea, #764ba2);
+        }
+
+        .logo {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .logo h1 {
+            color: #333;
+            font-size: 2.5rem;
+            font-weight: 700;
+            margin-bottom: 5px;
+        }
+
+        .logo p {
+            color: #666;
+            font-size: 0.9rem;
+        }
+
+        .user-type-toggle {
+            display: flex;
+            background: #f0f0f0;
+            border-radius: 12px;
+            padding: 4px;
+            margin-bottom: 30px;
+        }
+
+        .user-type-btn {
+            flex: 1;
+            padding: 12px;
+            border: none;
+            background: transparent;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            color: #666;
+        }
+
+        .user-type-btn.active {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+        }
+
+        .auth-toggle {
+            display: flex;
+            justify-content: center;
+            margin-bottom: 30px;
+        }
+
+        .auth-toggle button {
+            background: none;
+            border: none;
+            padding: 10px 20px;
+            cursor: pointer;
+            font-size: 1rem;
+            font-weight: 600;
+            color: #999;
+            position: relative;
+            transition: color 0.3s ease;
+        }
+
+        .auth-toggle button.active {
+            color: #667eea;
+        }
+
+        .auth-toggle button.active::after {
+            content: '';
+            position: absolute;
+            bottom: -5px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 30px;
+            height: 3px;
+            background: linear-gradient(90deg, #667eea, #764ba2);
+            border-radius: 2px;
+        }
+
+        .form-container {
+            display: none;
+        }
+
+        .form-container.active {
+            display: block;
+            animation: fadeIn 0.3s ease;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            color: #333;
+            font-weight: 600;
+            font-size: 0.9rem;
+        }
+
+        .form-group input,
+        .form-group select,
+        .form-group textarea {
+            width: 100%;
+            padding: 15px;
+            border: 2px solid #e0e0e0;
+            border-radius: 12px;
+            font-size: 1rem;
+            transition: all 0.3s ease;
+            background: #fafafa;
+        }
+
+        .form-group input:focus,
+        .form-group select:focus,
+        .form-group textarea:focus {
+            outline: none;
+            border-color: #667eea;
+            background: white;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.1);
+        }
+
+        .form-group textarea {
+            resize: vertical;
+            min-height: 80px;
+        }
+
+        .form-row {
+            display: flex;
+            gap: 15px;
+        }
+
+        .form-row .form-group {
+            flex: 1;
+        }
+
+        .submit-btn {
+            width: 100%;
+            padding: 16px;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            border: none;
+            border-radius: 12px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-top: 10px;
+        }
+
+        .submit-btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 25px rgba(102, 126, 234, 0.4);
+        }
+
+        .submit-btn:active {
+            transform: translateY(-1px);
+        }
+
+        .divider {
+            text-align: center;
+            margin: 25px 0;
+            position: relative;
+            color: #999;
+        }
+
+        .divider::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 0;
+            right: 0;
+            height: 1px;
+            background: #e0e0e0;
+        }
+
+        .divider span {
+            background: rgba(255, 255, 255, 0.95);
+            padding: 0 20px;
+        }
+
+        .social-login {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .social-btn {
+            flex: 1;
+            padding: 12px;
+            border: 2px solid #e0e0e0;
+            background: white;
+            border-radius: 12px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        .social-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+
+        .google-btn {
+            color: #4285f4;
+            border-color: #4285f4;
+        }
+
+        .facebook-btn {
+            color: #1877f2;
+            border-color: #1877f2;
+        }
+
+        .forgot-password {
+            text-align: center;
+            margin-top: 20px;
+        }
+
+        .forgot-password a {
+            color: #667eea;
+            text-decoration: none;
+            font-weight: 600;
+        }
+
+        .forgot-password a:hover {
+            text-decoration: underline;
+        }
+
+        .file-upload-container {
+            position: relative;
+        }
+
+        .file-input {
+            position: absolute;
+            opacity: 0;
+            width: 100%;
+            height: 100%;
+            cursor: pointer;
+            z-index: 2;
+        }
+
+        .file-upload-area {
+            border: 2px dashed #e0e0e0;
+            border-radius: 12px;
+            padding: 30px;
+            text-align: center;
+            background: #fafafa;
+            transition: all 0.3s ease;
+            position: relative;
+            z-index: 1;
+        }
+
+        .file-upload-area:hover,
+        .file-upload-area.dragover {
+            border-color: #667eea;
+            background: #f0f4ff;
+            transform: translateY(-2px);
+        }
+
+        .upload-icon {
+            font-size: 2rem;
+            margin-bottom: 10px;
+        }
+
+        .upload-text {
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 5px;
+        }
+
+        .upload-subtext {
+            color: #666;
+            font-size: 0.9rem;
+        }
+
+        .uploaded-files {
+            margin-top: 15px;
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+            gap: 10px;
+        }
+
+        .uploaded-file {
+            position: relative;
+            border-radius: 8px;
+            overflow: hidden;
+            aspect-ratio: 1;
+            background: #f0f0f0;
+        }
+
+        .uploaded-file img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .remove-file {
+            position: absolute;
+            top: 5px;
+            right: 5px;
+            background: rgba(255, 71, 87, 0.9);
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 20px;
+            height: 20px;
+            cursor: pointer;
+            font-size: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s ease;
+        }
+
+        .remove-file:hover {
+            background: #ff4757;
+            transform: scale(1.1);
+        }
+
+        .file-name {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: rgba(0, 0, 0, 0.7);
+            color: white;
+            padding: 5px;
+            font-size: 0.7rem;
+            text-align: center;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        @media (max-width: 480px) {
+            .auth-container {
+                padding: 30px 20px;
+                margin: 10px;
+            }
+
+            .logo h1 {
+                font-size: 2rem;
+            }
+
+            .form-row {
+                flex-direction: column;
+                gap: 0;
+            }
+        }
+
+        h1 {
+            text-align: center;
+            color: #333;
+            margin-bottom: 30px;
+        }
+
+        .form-section {
+            margin-bottom: 40px;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 12px;
+            border: 1px solid #e9ecef;
+        }
+
+        .form-section h2 {
+            margin-top: 0;
+            color: #495057;
+        }
+
+        /* Location Detection Field CSS */
+        .location-group {
+            position: relative;
+            margin-bottom: 20px;
+        }
+
+        .location-group label {
+            display: flex;
+            align-items: center;
+            margin-bottom: 8px;
+            color: #333;
+            font-weight: 600;
+            font-size: 0.9rem;
+        }
+
+        .location-icon {
+            margin-right: 8px;
+            font-size: 1.1rem;
+        }
+
+        .location-status {
+            margin-left: 10px;
+            font-size: 0.8rem;
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-weight: 500;
+        }
+
+        .location-status.detecting {
+            background: #fff3cd;
+            color: #856404;
+            animation: pulse 2s infinite;
+        }
+
+        .location-status.detected {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .location-status.error {
+            background: #f8d7da;
+            color: #721c24;
+        }
+
+        .location-input-container {
+            position: relative;
+            display: flex;
+            align-items: center;
+        }
+
+        .location-input {
+            width: 100%;
+            padding: 15px 60px 15px 15px;
+            border: 2px solid #e0e0e0;
+            border-radius: 12px;
+            font-size: 1rem;
+            background: #fafafa;
+            transition: all 0.3s ease;
+        }
+
+        .location-input:focus {
+            outline: none;
+            border-color: #667eea;
+            background: white;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.1);
+        }
+
+        .location-input.detecting {
+            background: linear-gradient(90deg, #f8f9fa 25%, #e9ecef 50%, #f8f9fa 75%);
+            background-size: 200% 100%;
+            animation: shimmer 2s infinite;
+        }
+
+        .location-input.success {
+            border-color: #28a745;
+            background: #f8fff9;
+        }
+
+        .location-input.error {
+            border-color: #dc3545;
+            background: #fff5f5;
+        }
+
+        .location-actions {
+            position: absolute;
+            right: 8px;
+            display: flex;
+            gap: 5px;
+        }
+
+        .detect-location-btn,
+        .clear-location-btn {
+            width: 36px;
+            height: 36px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s ease;
+            font-size: 14px;
+        }
+
+        .detect-location-btn {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+        }
+
+        .detect-location-btn:hover {
+            transform: scale(1.1);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+        }
+
+        .detect-location-btn:disabled {
+            background: #6c757d;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .detect-location-btn.detecting {
+            animation: spin 1s linear infinite;
+        }
+
+        .clear-location-btn {
+            background: #dc3545;
+            color: white;
+            opacity: 0;
+            visibility: hidden;
+        }
+
+        .location-input-container:hover .clear-location-btn,
+        .location-input:focus+.location-actions .clear-location-btn {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .clear-location-btn:hover {
+            background: #c82333;
+            transform: scale(1.1);
+        }
+
+        .location-suggestions {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            right: 0;
+            background: white;
+            border: 1px solid #e0e0e0;
+            border-radius: 0 0 12px 12px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            z-index: 1000;
+            max-height: 200px;
+            overflow-y: auto;
+            display: none;
+        }
+
+        .location-suggestions.show {
+            display: block;
+            animation: slideDown 0.3s ease;
+        }
+
+        .location-suggestion {
+            padding: 12px 15px;
+            cursor: pointer;
+            border-bottom: 1px solid #f0f0f0;
+            transition: background-color 0.2s ease;
+            display: flex;
+            align-items: center;
+        }
+
+        .location-suggestion:hover,
+        .location-suggestion.active {
+            background: #f8f9fa;
+        }
+
+        .location-suggestion:last-child {
+            border-bottom: none;
+        }
+
+        .suggestion-icon {
+            margin-right: 10px;
+            color: #667eea;
+        }
+
+        .suggestion-main {
+            font-weight: 600;
+            color: #333;
+        }
+
+        .suggestion-sub {
+            font-size: 0.85rem;
+            color: #666;
+            margin-top: 2px;
+        }
+
+        .location-error {
+            margin-top: 8px;
+            padding: 8px 12px;
+            background: #f8d7da;
+            color: #721c24;
+            border-radius: 8px;
+            font-size: 0.85rem;
+            display: none;
+        }
+
+        .location-error.show {
+            display: block;
+            animation: slideIn 0.3s ease;
+        }
+
+        .location-info {
+            margin-top: 8px;
+        }
+
+        .location-info small {
+            color: #666;
+            font-size: 0.8rem;
+            display: flex;
+            align-items: center;
+        }
+
+        .location-info small::before {
+            content: "ℹ️";
+            margin-right: 5px;
+        }
+
+        /* Animations */
+        @keyframes pulse {
+
+            0%,
+            100% {
+                opacity: 1;
+            }
+
+            50% {
+                opacity: 0.5;
+            }
+        }
+
+        @keyframes shimmer {
+            0% {
+                background-position: -200% 0;
+            }
+
+            100% {
+                background-position: 200% 0;
+            }
+        }
+
+        @keyframes spin {
+            from {
+                transform: rotate(0deg);
+            }
+
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        @keyframes slideDown {
+            from {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(-5px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* Responsive */
+        @media (max-width: 480px) {
+            .location-input {
+                padding: 12px 50px 12px 12px;
+            }
+
+            .detect-location-btn,
+            .clear-location-btn {
+                width: 32px;
+                height: 32px;
+                font-size: 12px;
+            }
+
+            .location-suggestions {
+                max-height: 150px;
+            }
+
+            .location-suggestion {
+                padding: 10px 12px;
+            }
+        }
+
+        /* Success notification animation */
+        @keyframes slideInRight {
+            from {
+                opacity: 0;
+                transform: translateX(100px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="auth-container">
+        <div class="back-home">
+            <a href="index.html" class="home-btn">← Back to Home</a>
+        </div>
+
+        <div class="logo">
+            <h1>ServiceHub</h1>
+            <p>Connect • Discover • Serve</p>
+        </div>
+
+        <!-- User Type Toggle -->
+        <div class="user-type-toggle">
+            <button class="user-type-btn active" data-type="customer">Customer</button>
+            <button class="user-type-btn" data-type="provider">Service Provider</button>
+        </div>
+
+        <!-- Auth Toggle -->
+        <div class="auth-toggle">
+            <button class="active" data-form="login">Login</button>
+            <button data-form="register">Register</button>
+        </div>
+
+        <!-- Customer Login Form -->
+        <div class="form-container active" id="customer-login">
+            <form method="POST" action="customer_login.php" id="customer-login-form">
+                <div class="form-group">
+                    <label for="customer-login-email">Email</label>
+                    <input type="text" id="customer-login-email" name="email" placeholder="Enter your email" required>
+                </div>
+                <div class="form-group">
+                    <label for="customer-login-password">Password</label>
+                    <input type="password" id="customer-login-password" name="password"
+                        placeholder="Enter your password" required>
+                </div>
+                <button type="submit" class="submit-btn">Login</button>
+            </form>
+        </div>
+
+        <!-- Customer Register Form -->
+        <div class="form-container" id="customer-register">
+            <form method="POST" action="register_customer.php">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="customer-first-name">First Name</label>
+                        <input type="text" id="customer-first-name" placeholder="First name" name="first_name" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="customer-last-name">Last Name</label>
+                        <input type="text" id="customer-last-name" name="last_name" placeholder="Last name" required>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label for="customer-email">Email</label>
+                    <input type="email" id="customer-email" name="email" placeholder="Enter your email" required>
+                </div>
+                <div class="form-group">
+                    <label for="customer-phone">Phone Number</label>
+                    <input type="tel" id="customer-phone" name="phone" placeholder="Enter your phone number" required>
+                </div>
+                <!-- Location Detection Field HTML -->
+                <div class="form-group location-group" data-location-field="primary">
+                    <label>
+                        <span class="location-icon">📍</span>
+                        Your Location
+                        <span class="location-status"></span>
+                    </label>
+                    <div class="location-input-container">
+                        <input type="text" name="primary-location" placeholder="Detecting your location..."
+                            class="location-input" autocomplete="address-level2">
+                        <div class="location-actions">
+                            <button type="button" class="detect-location-btn" title="Detect my location">
+                                <span class="location-btn-icon">🎯</span>
+                            </button>
+                            <button type="button" class="clear-location-btn" title="Clear location">
+                                <span class="clear-btn-icon">✕</span>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="location-suggestions"></div>
+                    <div class="location-error"></div>
+                    <div class="location-info">
+                        <small>We use your location to show nearby services. You can modify this anytime.</small>
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="customer-password">Password</label>
+                        <input type="password" id="customer-password" name="password" placeholder="Create password"
+                            required>
+                    </div>
+                    <div class="form-group">
+                        <label for="customer-confirm-password">Confirm Password</label>
+                        <input type="password" id="customer-confirm-password" placeholder="Confirm password"
+                            name="confirm_password" required>
+                    </div>
+                </div>
+                <button type="submit" class="submit-btn">Create Account</button>
+            </form>
+        </div>
+
+        <!-- Provider Login Form -->
+        <div class="form-container" id="provider-login">
+            <form method="POST" action="provider_login.php" id="provider-login-form">
+                <div class="form-group">
+                    <label for="provider-login-email">Email</label>
+                    <input type="text" id="provider-login-email" name="email" placeholder="Enter your email" required>
+                </div>
+                <div class="form-group">
+                    <label for="provider-login-password">Password</label>
+                    <input type="password" id="provider-login-password" name="password"
+                        placeholder="Enter your password" required>
+                </div>
+                <button type="submit" class="submit-btn">Login to Dashboard</button>
+            </form>
+        </div>
+
+        <!-- Provider Register Form -->
+        <div class="form-container" id="provider-register">
+            <form method="POST" action="register_provider.php" enctype="multipart/form-data">
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="provider-first-name">First Name</label>
+                        <input type="text" id="provider-first-name" name="first_name" placeholder="First name" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="provider-last-name">Last Name</label>
+                        <input type="text" id="provider-last-name" placeholder="Last name" name="last_name" required>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label for="provider-business-name">Business Name</label>
+                    <input type="text" id="provider-business-name" name="business_name"
+                        placeholder="Enter your business name" required>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="provider-email">Email</label>
+                        <input type="email" id="provider-email" placeholder="Business email" name="email" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="provider-phone">Phone Number</label>
+                        <input type="tel" id="provider-phone" name="phone" placeholder="Business phone" required>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label for="provider-category">Service Category</label>
+                    <select id="provider-category" name="category" required>
+                        <option value="">Select your service category</option>
+                        <option value="home-services">Home Services</option>
+                        <option value="beauty-wellness">Beauty & Wellness</option>
+                        <option value="automotive">Automotive</option>
+                        <option value="education">Education</option>
+                        <option value="healthcare">Healthcare</option>
+                        <option value="legal">Legal Services</option>
+                        <option value="travel">Travel & Tourism</option>
+                        <option value="food">Food & Catering</option>
+                        <option value="technology">Technology</option>
+                        <option value="other">Other</option>
+                    </select>
+                </div>
+                <div class="form-group" id="other-category-group" style="display: none;">
+                    <label for="other-category">Please specify your service</label>
+                    <input type="text" id="other-category" placeholder="Enter your service category"
+                        name="other_category">
+                </div>
+
+                <div class="form-group">
+                    <label for="provider-description">Business Description</label>
+                    <textarea id="provider-description" placeholder="Brief description of your services"
+                        name="description" required></textarea>
+                </div>
+
+                <!-- Location Detection Field HTML -->
+                <div class="form-group location-group" data-location-field="secondary">
+                    <label>
+                        <span class="location-icon">📍</span>
+                        Your Location
+                        <span class="location-status"></span>
+                    </label>
+                    <div class="location-input-container">
+                        <input type="text" name="secondary-location"
+                            placeholder="Click on this button to detect your location..." class="location-input"
+                            autocomplete="address-level2">
+                        <div class="location-actions">
+                            <button type="button" class="detect-location-btn" title="Detect my location">
+                                <span class="location-btn-icon">🎯</span>
+                            </button>
+                            <button type="button" class="clear-location-btn" title="Clear location">
+                                <span class="clear-btn-icon">✕</span>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="location-suggestions"></div>
+                    <div class="location-error"></div>
+                    <div class="location-info">
+                        <small>Optional: Add a location for better service coverage.</small>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label for="provider-photos">Company Photos</label>
+                    <div class="file-upload-container">
+                        <input type="file" id="provider-photos" name="photos[]" (note the [] for multiple uploads)
+                            multiple accept="image/*" class="file-input">
+                        <div class="file-upload-area" id="upload-area">
+                            <div class="upload-icon">📸</div>
+                            <p class="upload-text">Click to upload or drag and drop</p>
+                            <p class="upload-subtext">Upload multiple photos of your business (Max 5 photos)</p>
+                        </div>
+                        <div class="uploaded-files" id="uploaded-files"></div>
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="provider-password">Password</label>
+                        <input type="password" id="provider-password" placeholder="Create password" name="password"
+                            required>
+                    </div>
+                    <div class="form-group">
+                        <label for="provider-confirm-password">Confirm Password</label>
+                        <input type="password" id="provider-confirm-password" name="confirm_password"
+                            placeholder="Confirm password" required>
+                    </div>
+                </div>
+                <button type="submit" class="submit-btn" name="reg_provider">Register Business</button>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        // Get all necessary elements
+        const userTypeBtns = document.querySelectorAll('.user-type-btn');
+        const authToggleBtns = document.querySelectorAll('.auth-toggle button');
+        const formContainers = document.querySelectorAll('.form-container');
+        const categorySelect = document.getElementById('provider-category');
+        const otherCategoryGroup = document.getElementById('other-category-group');
+
+        let currentUserType = 'customer';
+        let currentAuthType = 'login';
+
+        categorySelect.addEventListener('change', () => {
+            if (categorySelect.value === 'other') {
+                otherCategoryGroup.style.display = 'block';
+            } else {
+                otherCategoryGroup.style.display = 'none';
+            }
+        });
+
+        // User type toggle functionality
+        userTypeBtns.forEach(btn => {
+            btn.addEventListener('click', () => {
+                userTypeBtns.forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                currentUserType = btn.dataset.type;
+                updateActiveForm();
+            });
+        });
+
+        // Auth toggle functionality
+        authToggleBtns.forEach(btn => {
+            btn.addEventListener('click', () => {
+                authToggleBtns.forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                currentAuthType = btn.dataset.form;
+                updateActiveForm();
+            });
+        });
+
+
+        // Function to update active form
+        function updateActiveForm() {
+            formContainers.forEach(container => {
+                container.classList.remove('active');
+            });
+
+            const activeFormId = `${currentUserType}-${currentAuthType}`;
+            const activeForm = document.getElementById(activeFormId);
+            if (activeForm) {
+                activeForm.classList.add('active');
+            }
+        }
+
+        // Form submission handlers
+        document.querySelectorAll('form').forEach(form => {
+            form.addEventListener('submit', (e) => {
+                e.preventDefault(); // Prevent default form submission
+
+                // Get form data
+                const formData = new FormData(form);
+                const data = Object.fromEntries(formData.entries());
+                console.log(data);
+
+                // Simple validation
+                const inputs = form.querySelectorAll('input[required], select[required], textarea[required]');
+                let isValid = true;
+
+                inputs.forEach(input => {
+                    if (!input.value.trim()) {
+                        input.style.borderColor = '#ff4757';
+                        isValid = false;
+                    } else {
+                        input.style.borderColor = '#e0e0e0';
+                    }
+                });
+
+                if (isValid) {
+                    const submitBtn = form.querySelector('.submit-btn');
+                    const originalText = submitBtn.textContent;
+                    submitBtn.textContent = 'Processing...';
+                    submitBtn.disabled = true;
+                    
+                    // Handle provider login form specifically
+                    if (form.id === 'provider-login-form') {
+                        fetch('provider_login.php', {
+                            method: 'POST',
+                            body: formData
+                        })
+                            .then(response => response.json())
+                            .then(data => {
+                                if (data.success) {
+                                    // Show success message with colored button
+                                    const submitBtn = form.querySelector('.submit-btn');
+                                    const originalText = submitBtn.textContent;
+                                    const originalBackground = submitBtn.style.background;
+
+                                    // Change button to success state
+                                    submitBtn.textContent = 'Login Successful!';
+                                    submitBtn.style.background = 'linear-gradient(135deg, #2ed573, #17c0eb)';
+                                    submitBtn.style.color = 'white';
+                                    submitBtn.disabled = true;
+
+                                    // Show success message
+                                    showSuccessMessage('Provider login successful! Redirecting...');
+
+                                    // Redirect after 2 seconds
+                                    setTimeout(() => {
+                                        window.location.href = 'index.html';
+                                    }, 2000);
+                                } else {
+                                    alert(data.message || 'Login failed. Please try again.');
+                                    submitBtn.textContent = originalText;
+                                    submitBtn.disabled = false;
+                                }
+                            })
+                            .catch(error => {
+                                console.error('Error:', error.message());
+                                // alert('An error occurred. Please try again.');
+                                submitBtn.textContent = originalText;
+                                submitBtn.disabled = false;
+                            });
+                    } else if (form.id === 'customer-login-form') {
+                        // Handle customer login form specifically
+                        fetch('customer_login.php', {
+                            method: 'POST',
+                            body: formData
+                        })
+                            .then(response => response.json())
+                            .then(data => {
+                                if (data.success) {
+                                    // Show success message with colored button
+                                    const submitBtn = form.querySelector('.submit-btn');
+                                    const originalText = submitBtn.textContent;
+                                    const originalBackground = submitBtn.style.background;
+
+                                    // Change button to success state
+                                    submitBtn.textContent = 'Login Successful!';
+                                    submitBtn.style.background = 'linear-gradient(135deg, #2ed573, #17c0eb)';
+                                    submitBtn.style.color = 'white';
+                                    submitBtn.disabled = true;
+
+                                    // Show success message
+                                    showSuccessMessage('Customer login successful! Redirecting...');
+
+                                    // Redirect after 2 seconds
+                                    setTimeout(() => {
+                                        window.location.href = 'categories.php';
+                                    }, 2000);
+                                } else {
+                                    alert(data.message || 'Login failed. Please try again.');
+                                    submitBtn.textContent = originalText;
+                                    submitBtn.disabled = false;
+                                }
+                            })
+                            .catch(error => {
+                                console.log("Here occured");
+
+                                console.error('Error:', error);
+                                //alert('An error occurred. Please try again.');
+                                submitBtn.textContent = originalText;
+                                submitBtn.disabled = false;
+                            });
+                    } else {
+                        console.log(formData);
+                        console.log(data);
+                        
+                        // Handle other forms (registration forms)
+                        fetch(form.action, {
+                            method: 'POST',
+                            body: formData
+                        })
+                            .then(response => response.text()) // You can change to .json() if your PHP returns JSON
+                            .then(result => {
+                                // Optional: handle result from PHP
+                                showSuccessMessage(`${currentUserType === 'customer' ? 'Customer' : 'Service Provider'} registration successful!`);
+
+                                submitBtn.textContent = originalText;
+                                submitBtn.disabled = false;
+                                // form.reset();
+
+                                // Switch to login form for the same user type
+                                // document.querySelector('.auth-toggle button[data-form="login"]').click();
+                                // document.querySelector(`.user-type-btn[data-type="${currentUserType}"]`).click();
+                            })
+                    }
+                }
+            });
+        });
+
+        // Social login handlers
+        document.querySelectorAll('.social-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const provider = btn.textContent.trim().split(' ')[1];
+                alert(`${provider} authentication would be implemented here`);
+            });
+        });
+
+        // Initialize
+        updateActiveForm();
+
+        // Success message function
+        function showSuccessMessage(message) {
+            // Create success notification
+            const successNotification = document.createElement('div');
+            successNotification.style.cssText = `
+                position: fixed;
+                top: 20px;
+                right: 20px;
+                background: linear-gradient(135deg, #2ed573, #17c0eb);
+                color: white;
+                padding: 15px 25px;
+                border-radius: 12px;
+                box-shadow: 0 10px 30px rgba(46, 213, 115, 0.3);
+                z-index: 1000;
+                animation: slideInRight 0.5s ease;
+                font-weight: 600;
+                font-size: 14px;
+            `;
+            successNotification.textContent = message;
+
+            document.body.appendChild(successNotification);
+
+            // Remove after 3 seconds
+            setTimeout(() => {
+                successNotification.remove();
+            }, 3000);
+        }
+
+        // File upload functionality
+        const fileInput = document.getElementById('provider-photos');
+        const uploadArea = document.getElementById('upload-area');
+        const uploadedFilesContainer = document.getElementById('uploaded-files');
+        let uploadedFiles = [];
+        const maxFiles = 5;
+
+        // Drag and drop functionality
+        uploadArea.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            uploadArea.classList.add('dragover');
+        });
+
+        uploadArea.addEventListener('dragleave', () => {
+            uploadArea.classList.remove('dragover');
+        });
+
+        uploadArea.addEventListener('drop', (e) => {
+
+            uploadArea.classList.remove('dragover');
+            const files = Array.from(e.dataTransfer.files);
+            handleFiles(files);
+        });
+
+        // File input change
+        fileInput.addEventListener('change', (e) => {
+            const files = Array.from(e.target.files);
+            handleFiles(files);
+        });
+
+        function handleFiles(files) {
+            const imageFiles = files.filter(file => file.type.startsWith('image/'));
+
+            if (uploadedFiles.length + imageFiles.length > maxFiles) {
+                alert(`You can only upload a maximum of ${maxFiles} photos`);
+                return;
+            }
+
+            imageFiles.forEach(file => {
+                if (uploadedFiles.length < maxFiles) {
+                    uploadedFiles.push(file);
+                    displayFile(file);
+                }
+            });
+
+            updateUploadArea();
+        }
+
+        function displayFile(file) {
+            const fileDiv = document.createElement('div');
+            fileDiv.className = 'uploaded-file';
+
+            const img = document.createElement('img');
+            const reader = new FileReader();
+
+            reader.onload = (e) => {
+                img.src = e.target.result;
+            };
+            reader.readAsDataURL(file);
+
+            const removeBtn = document.createElement('button');
+            removeBtn.className = 'remove-file';
+            removeBtn.innerHTML = '×';
+            removeBtn.type = 'button';
+            removeBtn.onclick = () => removeFile(file, fileDiv);
+
+            const fileName = document.createElement('div');
+            fileName.className = 'file-name';
+            fileName.textContent = file.name;
+
+            fileDiv.appendChild(img);
+            fileDiv.appendChild(removeBtn);
+            fileDiv.appendChild(fileName);
+            uploadedFilesContainer.appendChild(fileDiv);
+        }
+
+        function removeFile(file, fileDiv) {
+            uploadedFiles = uploadedFiles.filter(f => f !== file);
+            fileDiv.remove();
+            updateUploadArea();
+        }
+
+        function updateUploadArea() {
+            if (uploadedFiles.length >= maxFiles) {
+                uploadArea.style.display = 'none';
+            } else {
+                uploadArea.style.display = 'block';
+                const remaining = maxFiles - uploadedFiles.length;
+                uploadArea.querySelector('.upload-subtext').textContent =
+                    `Upload multiple photos of your business (${remaining} more photos allowed)`;
+            }
+        }
+        // Comprehensive Form Validation Script for JustDial-like Authentication Forms
+
+        class FormValidator {
+            constructor() {
+                this.validationRules = {
+                    email: {
+                        pattern: /^[^\s@]+@[^\s@]+\.[^\s@]+$/,
+                        message: 'Please enter a valid email address'
+                    },
+                    phone: {
+                        pattern: /^[\+]?[1-9][\d]{0,15}$/,
+                        message: 'Please enter a valid phone number (10-16 digits)'
+                    },
+                    indianPhone: {
+                        pattern: /^[6-9]\d{9}$/,
+                        message: 'Please enter a valid Indian mobile number (10 digits starting with 6-9)'
+                    },
+                    password: {
+                        pattern: /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/,
+                        message: 'Password must be at least 8 characters with uppercase, lowercase, number and special character'
+                    },
+                    name: {
+                        pattern: /^[a-zA-Z\s]{2,50}$/,
+                        message: 'Name must be 2-50 characters and contain only letters and spaces'
+                    },
+                    businessName: {
+                        pattern: /^[a-zA-Z0-9\s&.,'-]{2,100}$/,
+                        message: 'Business name must be 2-100 characters'
+                    }
+                };
+
+                this.init();
+            }
+
+            init() {
+                this.attachValidationListeners();
+                this.attachFormSubmitListeners();
+            }
+
+            // Real-time validation as user types
+            attachValidationListeners() {
+                const inputs = document.querySelectorAll('input, select, textarea');
+
+                inputs.forEach(input => {
+                    // Validate on blur (when user leaves the field)
+                    input.addEventListener('blur', () => {
+                        this.validateField(input);
+                    });
+
+                    // Clear error state on focus
+                    input.addEventListener('focus', () => {
+                        this.clearFieldError(input);
+                    });
+
+                    // Real-time validation for specific fields
+                    if (input.type === 'email' || input.type === 'tel' || input.type === 'password') {
+                        input.addEventListener('input', () => {
+                            // Debounced validation to avoid excessive validation
+                            clearTimeout(input.validationTimeout);
+                            input.validationTimeout = setTimeout(() => {
+                                this.validateField(input);
+                            }, 500);
+                        });
+                    }
+                });
+            }
+
+            // Attach form submission listeners
+            attachFormSubmitListeners() {
+                const forms = document.querySelectorAll('form');
+
+                forms.forEach(form => {
+                    form.addEventListener('submit', (e) => {
+
+                        this.validateForm(form);
+                    });
+                });
+            }
+
+            // Validate individual field
+            validateField(field) {
+                const fieldName = field.id;
+                const value = field.value.trim();
+                const isRequired = field.hasAttribute('required');
+
+                // Clear previous errors
+                this.clearFieldError(field);
+
+                // Check if required field is empty
+                if (isRequired && !value) {
+                    this.showFieldError(field, 'This field is required');
+                    return false;
+                }
+
+                // Skip validation if field is empty and not required
+                if (!value && !isRequired) {
+                    return true;
+                }
+
+                // Specific validations based on field type/name
+                if (fieldName.includes('email')) {
+                    return this.validateEmail(field, value);
+                }
+
+                if (fieldName.includes('phone')) {
+                    return this.validatePhone(field, value);
+                }
+
+                if (fieldName.includes('password')) {
+                    return this.validatePassword(field, value);
+                }
+
+                if (fieldName.includes('confirm-password')) {
+                    return this.validateConfirmPassword(field, value);
+                }
+
+                if (fieldName.includes('first-name') || fieldName.includes('last-name')) {
+                    return this.validateName(field, value);
+                }
+
+                if (fieldName.includes('business-name')) {
+                    return this.validateBusinessName(field, value);
+                }
+
+                if (fieldName.includes('location')) {
+                    return this.validateLocation(field, value);
+                }
+
+                if (fieldName.includes('description')) {
+                    return this.validateDescription(field, value);
+                }
+
+                if (fieldName.includes('category')) {
+                    return this.validateCategory(field, value);
+                }
+
+                return true;
+            }
+
+            // Email validation
+            validateEmail(field, value) {
+                if (!this.validationRules.email.pattern.test(value)) {
+                    this.showFieldError(field, this.validationRules.email.message);
+                    return false;
+                }
+
+                // Additional email checks
+                if (value.length > 254) {
+                    this.showFieldError(field, 'Email address is too long');
+                    return false;
+                }
+
+                this.showFieldSuccess(field);
+                return true;
+            }
+
+            // Phone validation
+            validatePhone(field, value) {
+                // Remove all non-digit characters for validation
+                const cleanPhone = value.replace(/\D/g, '');
+
+                // Check for Indian phone numbers specifically
+                if (cleanPhone.length === 10 && /^[6-9]/.test(cleanPhone)) {
+                    if (!this.validationRules.indianPhone.pattern.test(cleanPhone)) {
+                        this.showFieldError(field, this.validationRules.indianPhone.message);
+                        return false;
+                    }
+                } else if (cleanPhone.length >= 10 && cleanPhone.length <= 16) {
+                    // International phone number validation
+                    if (!this.validationRules.phone.pattern.test(value)) {
+                        this.showFieldError(field, 'Please enter a valid phone number');
+                        return false;
+                    }
+                } else {
+                    this.showFieldError(field, 'Phone number must be 10-16 digits');
+                    return false;
+                }
+
+                this.showFieldSuccess(field);
+                return true;
+            }
+
+            // Password validation
+            validatePassword(field, value) {
+                const errors = [];
+
+                if (value.length < 8) {
+                    errors.push('at least 8 characters');
+                }
+
+                if (!/[a-z]/.test(value)) {
+                    errors.push('one lowercase letter');
+                }
+
+                if (!/[A-Z]/.test(value)) {
+                    errors.push('one uppercase letter');
+                }
+
+                if (!/\d/.test(value)) {
+                    errors.push('one number');
+                }
+
+                if (!/[@$!%*?&]/.test(value)) {
+                    errors.push('one special character (@$!%*?&)');
+                }
+
+                if (errors.length > 0) {
+                    this.showFieldError(field, `Password must contain ${errors.join(', ')}`);
+                    return false;
+                }
+
+                // Check for common weak passwords
+                const commonPasswords = ['password', '12345678', 'qwerty123', 'admin123'];
+                if (commonPasswords.includes(value.toLowerCase())) {
+                    this.showFieldError(field, 'Please choose a stronger password');
+                    return false;
+                }
+
+                this.showFieldSuccess(field);
+                return true;
+            }
+
+            // Confirm password validation
+            validateConfirmPassword(field, value) {
+                const passwordField = document.querySelector(`#${field.id.replace('confirm-', '')}`);
+
+                if (!passwordField) {
+                    this.showFieldError(field, 'Password field not found');
+                    return false;
+                }
+
+                if (value !== passwordField.value) {
+                    this.showFieldError(field, 'Passwords do not match');
+                    return false;
+                }
+
+                this.showFieldSuccess(field);
+                return true;
+            }
+
+            // Name validation
+            validateName(field, value) {
+                if (!this.validationRules.name.pattern.test(value)) {
+                    this.showFieldError(field, this.validationRules.name.message);
+                    return false;
+                }
+
+                // Check for obvious fake names
+                const suspiciousPatterns = [
+                    /^[a-zA-Z]\s*$/,  // Single character names
+                    /^\d+$/,          // Only numbers
+                    /^(.)\1{2,}$/     // Repeated characters (aaa, bbb)
+                ];
+
+                if (suspiciousPatterns.some(pattern => pattern.test(value))) {
+                    this.showFieldError(field, 'Please enter a valid name');
+                    return false;
+                }
+
+                this.showFieldSuccess(field);
+                return true;
+            }
+
+            // Business name validation
+            validateBusinessName(field, value) {
+                if (!this.validationRules.businessName.pattern.test(value)) {
+                    this.showFieldError(field, this.validationRules.businessName.message);
+                    return false;
+                }
+
+                if (value.length < 2) {
+                    this.showFieldError(field, 'Business name must be at least 2 characters');
+                    return false;
+                }
+
+                this.showFieldSuccess(field);
+                return true;
+            }
+
+            // Location validation
+            validateLocation(field, value) {
+                if (value.length < 2) {
+                    this.showFieldError(field, 'Location must be at least 2 characters');
+                    return false;
+                }
+
+                if (value.length > 100) {
+                    this.showFieldError(field, 'Location must be less than 100 characters');
+                    return false;
+                }
+
+                // Check for valid location pattern (letters, numbers, spaces, common punctuation)
+                if (!/^[a-zA-Z0-9\s,.-]+$/.test(value)) {
+                    this.showFieldError(field, 'Please enter a valid location');
+                    return false;
+                }
+
+                this.showFieldSuccess(field);
+                return true;
+            }
+
+            // Description validation
+            validateDescription(field, value) {
+                if (value.length < 10) {
+                    this.showFieldError(field, 'Description must be at least 10 characters');
+                    return false;
+                }
+
+                if (value.length > 500) {
+                    this.showFieldError(field, 'Description must be less than 500 characters');
+                    return false;
+                }
+
+                // Check for meaningful content (not just repeated characters or spaces)
+                const meaningfulContent = value.replace(/\s+/g, ' ').trim();
+                if (meaningfulContent.length < 10) {
+                    this.showFieldError(field, 'Please provide a meaningful description');
+                    return false;
+                }
+
+                this.showFieldSuccess(field);
+                return true;
+            }
+
+            validateCategory(field, value) {
+
+                if (!value) {
+                    this.showFieldError(field, 'Please select a service category');
+                    return false;
+                }
+
+                this.showFieldSuccess(field);
+                return true;
+            }
+
+
+
+            // Email or phone validation (for login fields)
+            validateEmailOrPhone(field, value) {
+                // Check if it's an email
+                if (value.includes('@')) {
+                    return this.validateEmail(field, value);
+                } else {
+                    return this.validatePhone(field, value);
+                }
+            }
+
+            // Photo upload validation
+            validatePhotos() {
+                const photoInput = document.getElementById('provider-photos');
+                if (!photoInput) return true;
+
+                const files = Array.from(photoInput.files || []);
+
+                if (files.length === 0) {
+                    this.showFieldError(photoInput, 'Please upload at least one photo of your business');
+                    return false;
+                }
+
+                if (files.length > 5) {
+                    this.showFieldError(photoInput, 'You can upload maximum 5 photos');
+                    return false;
+                }
+
+                // Validate each file
+                for (let file of files) {
+                    // Check file type
+                    if (!file.type.startsWith('image/')) {
+                        this.showFieldError(photoInput, 'Please upload only image files');
+                        return false;
+                    }
+
+                    // Check file size (5MB limit)
+                    if (file.size > 5 * 1024 * 1024) {
+                        this.showFieldError(photoInput, 'Each image must be less than 5MB');
+                        return false;
+                    }
+                }
+
+                this.clearFieldError(photoInput);
+                return true;
+            }
+
+            // Validate entire form
+            validateForm(form) {
+                const inputs = form.querySelectorAll('input, select, textarea');
+                let isValid = true;
+                let firstErrorField = null;
+
+                // Validate all fields
+                inputs.forEach(input => {
+                    if (!this.validateField(input)) {
+                        isValid = false;
+                        if (!firstErrorField) {
+                            firstErrorField = input;
+                        }
+                    }
+                });
+
+                // Special validation for photo uploads in provider registration
+                if (form.closest('#provider-register')) {
+                    if (!this.validatePhotos()) {
+                        isValid = false;
+                    }
+                }
+
+                // Additional form-level validations
+                if (isValid) {
+                    isValid = this.validateFormSpecificRules(form);
+                }
+
+                if (isValid) {
+                    this.handleSuccessfulValidation(form);
+                } else {
+                    // Focus on first error field
+                    if (firstErrorField) {
+                        firstErrorField.focus();
+                        firstErrorField.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    }
+                }
+
+                return isValid;
+            }
+
+            // Form-specific validation rules
+            validateFormSpecificRules(form) {
+                const formId = form.closest('.form-container').id;
+
+                // Customer registration specific validations
+                if (formId === 'customer-register') {
+                    return this.validateCustomerRegistration(form);
+                }
+
+                // Provider registration specific validations
+                if (formId === 'provider-register') {
+                    return this.validateProviderRegistration(form);
+                }
+
+                // Login form validations
+                if (formId.includes('login')) {
+                    return this.validateLoginForm(form);
+                }
+
+                return true;
+            }
+
+            validateCustomerRegistration(form) {
+                // Add any customer-specific validation logic here
+                return true;
+            }
+
+            validateProviderRegistration(form) {
+                // Business-specific validations
+                const businessName = form.querySelector('#provider-business-name');
+                const category = form.querySelector('#provider-category');
+
+                if (businessName && category) {
+                    // Check if business name matches category appropriately
+                    // This is a basic example - you can expand this logic
+                    const businessNameValue = businessName.value.toLowerCase();
+                    const categoryValue = category.value;
+
+                    // Add logic to check business name relevance to category if needed
+                }
+
+                return true;
+            }
+
+            validateLoginForm(form) {
+                const emailOrPhoneField = form.querySelector('input[type="text"]');
+
+                if (emailOrPhoneField) {
+                    return this.validateEmailOrPhone(emailOrPhoneField, emailOrPhoneField.value.trim());
+                }
+
+                return true;
+            }
+
+            // Show field error
+            showFieldError(field, message) {
+                this.clearFieldError(field);
+
+                field.style.borderColor = '#ff4757';
+                field.style.backgroundColor = '#fff5f5';
+
+                const errorDiv = document.createElement('div');
+                errorDiv.className = 'field-error';
+                errorDiv.style.cssText = `
+            color: #ff4757;
+            font-size: 0.85rem;
+            margin-top: 5px;
+            padding: 0 5px;
+            animation: slideIn 0.3s ease;
+        `;
+                errorDiv.textContent = message;
+
+                field.parentNode.appendChild(errorDiv);
+
+                // Add shake animation
+                field.style.animation = 'shake 0.5s ease-in-out';
+                setTimeout(() => {
+                    field.style.animation = '';
+                }, 500);
+            }
+
+            // Show field success
+            showFieldSuccess(field) {
+                this.clearFieldError(field);
+                field.style.borderColor = '#2ed573';
+                field.style.backgroundColor = '#f0fff4';
+            }
+
+            // Clear field error
+            clearFieldError(field) {
+                field.style.borderColor = '#e0e0e0';
+                field.style.backgroundColor = '#fafafa';
+
+                const existingError = field.parentNode.querySelector('.field-error');
+                if (existingError) {
+                    existingError.remove();
+                }
+            }
+
+            // Handle successful form validation
+            handleSuccessfulValidation(form) {
+                const submitBtn = form.querySelector('.submit-btn');
+                const originalText = submitBtn.textContent;
+
+                // Show loading state
+                submitBtn.textContent = 'Processing...';
+                submitBtn.disabled = true;
+                submitBtn.style.background = '#95a5a6';
+
+                // Simulate form submission
+                // setTimeout(() => {
+                    // Get form data
+                    const formData = new FormData(form);
+                    const data = Object.fromEntries(formData.entries());
+        console.log(data);
+
+                    // Add uploaded files to data
+                    const photoInput = document.getElementById('provider-photos');
+                    if (photoInput && photoInput.files.length > 0) {
+                        data.photos = Array.from(photoInput.files);
+                    }
+
+                    console.log('Form submitted successfully:', data);
+
+                    // Show success message
+                    this.showSuccessMessage(form);
+
+                    // Reset form
+                    // form.reset();
+                    this.clearAllErrors(form);
+
+                    // Reset button
+                    submitBtn.textContent = originalText;
+                    submitBtn.disabled = false;
+                    submitBtn.style.background = '';
+
+                // }, 2000);
+            }
+
+            // Show success message
+            showSuccessMessage(form) {
+                const formContainer = form.closest('.form-container');
+                const currentUserType = document.querySelector('.user-type-btn.active').dataset.type;
+                const currentAuthType = document.querySelector('.auth-toggle button.active').dataset.form;
+
+                const message = currentAuthType === 'login'
+                    ? `${currentUserType === 'customer' ? 'Customer' : 'Service Provider'} login successful!`
+                    : `${currentUserType === 'customer' ? 'Customer' : 'Service Provider'} registration successful!`;
+
+                // Create success overlay
+                const successOverlay = document.createElement('div');
+                successOverlay.style.cssText = `
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: linear-gradient(135deg, #2ed573, #17c0eb);
+            color: white;
+            padding: 15px 25px;
+            border-radius: 12px;
+            box-shadow: 0 10px 30px rgba(46, 213, 115, 0.3);
+            z-index: 1000;
+            animation: slideInRight 0.5s ease;
+        `;
+                successOverlay.textContent = message;
+
+                document.body.appendChild(successOverlay);
+
+                // Remove after 3 seconds
+                setTimeout(() => {
+                    successOverlay.remove();
+                }, 3000);
+            }
+
+            // Clear all errors in form
+            clearAllErrors(form) {
+                const inputs = form.querySelectorAll('input, select, textarea');
+                inputs.forEach(input => {
+                    this.clearFieldError(input);
+                });
+            }
+        }
+
+        // Add CSS animations
+        const style = document.createElement('style');
+        style.textContent = `
+    @keyframes shake {
+        0%, 100% { transform: translateX(0); }
+        25% { transform: translateX(-5px); }
+        75% { transform: translateX(5px); }
+    }
+    
+    @keyframes slideIn {
+        from { opacity: 0; transform: translateY(-10px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+    
+    @keyframes slideInRight {
+        from { opacity: 0; transform: translateX(100px); }
+        to { opacity: 1; transform: translateX(0); }
+    }
+`;
+        document.head.appendChild(style);
+
+        // Initialize the form validator when DOM is loaded
+        document.addEventListener('DOMContentLoaded', () => {
+            new FormValidator();
+        });
+
+        // Export for use in other scripts
+        if (typeof module !== 'undefined' && module.exports) {
+            module.exports = FormValidator;
+        }
+        /**
+         * Location Detection and Management System
+         * Automatically detects user location and provides location-based services
+         * Modified to support multiple location fields on the same page
+         */
+
+        class LocationDetector {
+            constructor(container, options = {}) {
+                this.container = container;
+                this.fieldName = container.dataset.locationField || 'default';
+                this.options = {
+                    autoDetect: false, // Changed default to false for secondary fields
+                    enableSuggestions: true,
+                    fallbackToIP: true,
+                    timeout: 10000,
+                    ...options
+                };
+
+                this.currentLocation = null;
+                this.watchId = null;
+                this.debounceTimer = null;
+
+                this.init();
+            }
+
+            init() {
+                this.bindElements();
+                this.attachEventListeners();
+
+                // Only auto-detect for primary location or if explicitly enabled
+                if (this.options.autoDetect) {
+                    this.detectLocation();
+                }
+            }
+
+            bindElements() {
+                this.locationInput = this.container.querySelector('.location-input');
+                this.detectBtn = this.container.querySelector('.detect-location-btn');
+                this.clearBtn = this.container.querySelector('.clear-location-btn');
+                this.statusElement = this.container.querySelector('.location-status');
+                this.suggestionsContainer = this.container.querySelector('.location-suggestions');
+                this.errorContainer = this.container.querySelector('.location-error');
+
+                if (!this.locationInput) {
+                    console.error('Location input element not found in container:', this.container);
+                    return;
+                }
+            }
+
+            attachEventListeners() {
+                // Detect location button
+                if (this.detectBtn) {
+                    this.detectBtn.addEventListener('click', () => {
+                        this.detectLocation();
+                    });
+                }
+
+                // Clear location button
+                if (this.clearBtn) {
+                    this.clearBtn.addEventListener('click', () => {
+                        this.clearLocation();
+                    });
+                }
+
+                // Input field events
+                if (this.locationInput) {
+                    this.locationInput.addEventListener('input', (e) => {
+                        this.handleLocationInput(e.target.value);
+                    });
+
+                    this.locationInput.addEventListener('focus', () => {
+                        this.showSuggestions();
+                    });
+
+                    this.locationInput.addEventListener('blur', (e) => {
+                        // Delay hiding suggestions to allow clicking
+                        setTimeout(() => {
+                            this.hideSuggestions();
+                        }, 200);
+                    });
+
+                    this.locationInput.addEventListener('keydown', (e) => {
+                        this.handleKeyNavigation(e);
+                    });
+                }
+
+                // Click outside to hide suggestions (only for this instance)
+                document.addEventListener('click', (e) => {
+                    if (!e.target.closest(`[data-location-field="${this.fieldName}"]`)) {
+                        this.hideSuggestions();
+                    }
+                });
+            }
+
+            // Main location detection method
+            async detectLocation() {
+                this.setDetectingState(true);
+                this.clearError();
+
+                try {
+                    // Try HTML5 Geolocation first
+                    const position = await this.getCurrentPosition();
+                    const address = await this.reverseGeocode(position.coords.latitude, position.coords.longitude);
+
+                    this.currentLocation = {
+                        lat: position.coords.latitude,
+                        lng: position.coords.longitude,
+                        address: address,
+                        accuracy: position.coords.accuracy
+                    };
+
+                    this.updateLocationInput(address);
+                    this.setStatus('detected', 'Location detected');
+
+                } catch (error) {
+                    console.error('Geolocation failed:', error);
+
+                    if (this.options.fallbackToIP) {
+                        try {
+                            // Fallback to IP-based location
+                            const ipLocation = await this.getLocationByIP();
+                            this.currentLocation = ipLocation;
+                            this.updateLocationInput(ipLocation.address);
+                            this.setStatus('detected', 'Approximate location');
+                        } catch (ipError) {
+                            console.error('IP location failed:', ipError);
+                            this.handleLocationError('Unable to detect location');
+                        }
+                    } else {
+                        this.handleLocationError(this.getLocationErrorMessage(error));
+                    }
+                } finally {
+                    this.setDetectingState(false);
+                }
+            }
+
+            // Get current position using HTML5 Geolocation
+            getCurrentPosition() {
+                return new Promise((resolve, reject) => {
+                    if (!navigator.geolocation) {
+                        reject(new Error('Geolocation not supported'));
+                        return;
+                    }
+
+                    const options = {
+                        enableHighAccuracy: true,
+                        timeout: this.options.timeout,
+                        maximumAge: 300000 // 5 minutes
+                    };
+
+                    navigator.geolocation.getCurrentPosition(resolve, reject, options);
+                });
+            }
+
+            // Reverse geocoding to get address from coordinates
+            async reverseGeocode(lat, lng) {
+                try {
+                    // Using a free geocoding service (you can replace with your preferred service)
+                    const response = await fetch(
+                        `https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${lat}&longitude=${lng}&localityLanguage=en`
+                    );
+
+                    if (!response.ok) {
+                        throw new Error('Geocoding service unavailable');
+                    }
+
+                    const data = await response.json();
+
+                    // Format address for India
+                    const city = data.city || data.locality || data.principalSubdivision;
+                    const state = data.principalSubdivision;
+                    const country = data.countryName;
+
+                    return city ? `${city}, ${state}, ${country}` : 'Location detected';
+
+                } catch (error) {
+                    console.error('Reverse geocoding failed:', error);
+                    return 'Current Location';
+                }
+            }
+
+            // Fallback IP-based location detection
+            async getLocationByIP() {
+                try {
+                    const response = await fetch('https://ipapi.co/json/');
+
+                    if (!response.ok) {
+                        throw new Error('IP location service unavailable');
+                    }
+
+                    const data = await response.json();
+
+                    return {
+                        lat: data.latitude,
+                        lng: data.longitude,
+                        address: `${data.city}, ${data.region}, ${data.country_name}`,
+                        accuracy: 10000 // IP location is less accurate
+                    };
+
+                } catch (error) {
+                    throw new Error('IP location detection failed');
+                }
+            }
+
+            // Handle manual location input
+            handleLocationInput(value) {
+                clearTimeout(this.debounceTimer);
+
+                if (value.length < 2) {
+                    this.hideSuggestions();
+                    return;
+                }
+
+                // Debounce the search
+                this.debounceTimer = setTimeout(() => {
+                    if (this.options.enableSuggestions) {
+                        this.searchLocationSuggestions(value);
+                    }
+                }, 300);
+            }
+
+            // Search for location suggestions
+            async searchLocationSuggestions(query) {
+                try {
+                    // Using a free location search service
+                    // Note: Replace YOUR_MAPBOX_TOKEN with actual token for production use
+                    const response = await fetch(
+                        `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(query)}.json?access_token=YOUR_MAPBOX_TOKEN&country=IN&types=place,locality,neighborhood&limit=5`
+                    );
+
+                    // Fallback to a simple suggestion system if no API key
+                    if (!response.ok) {
+                        this.showFallbackSuggestions(query);
+                        return;
+                    }
+
+                    const data = await response.json();
+                    this.displaySuggestions(data.features);
+
+                } catch (error) {
+                    console.error('Location search failed:', error);
+                    this.showFallbackSuggestions(query);
+                }
+            }
+
+            // Fallback suggestions for common Indian cities
+            showFallbackSuggestions(query) {
+                const indianCities = [
+                    'Mumbai, Maharashtra, India',
+                    'Delhi, Delhi, India',
+                    'Bangalore, Karnataka, India',
+                    'Chennai, Tamil Nadu, India',
+                    'Hyderabad, Telangana, India',
+                    'Pune, Maharashtra, India',
+                    'Kolkata, West Bengal, India',
+                    'Ahmedabad, Gujarat, India',
+                    'Jaipur, Rajasthan, India',
+                    'Lucknow, Uttar Pradesh, India',
+                    'Kanpur, Uttar Pradesh, India',
+                    'Nagpur, Maharashtra, India',
+                    'Indore, Madhya Pradesh, India',
+                    'Thane, Maharashtra, India',
+                    'Bhopal, Madhya Pradesh, India',
+                    'Visakhapatnam, Andhra Pradesh, India',
+                    'Pimpri-Chinchwad, Maharashtra, India',
+                    'Patna, Bihar, India',
+                    'Vadodara, Gujarat, India',
+                    'Ghaziabad, Uttar Pradesh, India'
+                ];
+
+                const filtered = indianCities
+                    .filter(city => city.toLowerCase().includes(query.toLowerCase()))
+                    .slice(0, 5)
+                    .map(city => ({
+                        place_name: city,
+                        text: city.split(',')[0]
+                    }));
+
+                this.displaySuggestions(filtered);
+            }
+
+            // Display location suggestions
+            displaySuggestions(suggestions) {
+                if (!suggestions || suggestions.length === 0) {
+                    this.hideSuggestions();
+                    return;
+                }
+
+                let html = '';
+                suggestions.forEach((suggestion, index) => {
+                    const mainText = suggestion.text || suggestion.place_name.split(',')[0];
+                    const subText = suggestion.place_name || suggestion.text;
+
+                    html += `
+                <div class="location-suggestion" data-index="${index}" data-location="${suggestion.place_name}">
+                    <span class="suggestion-icon">📍</span>
+                    <div>
+                        <div class="suggestion-main">${mainText}</div>
+                        <div class="suggestion-sub">${subText}</div>
+                    </div>
+                </div>
+            `;
+                });
+
+                this.suggestionsContainer.innerHTML = html;
+                this.showSuggestions();
+                this.attachSuggestionListeners();
+            }
+
+            // Attach click listeners to suggestions
+            attachSuggestionListeners() {
+                const suggestions = this.suggestionsContainer.querySelectorAll('.location-suggestion');
+                suggestions.forEach(suggestion => {
+                    suggestion.addEventListener('click', () => {
+                        const location = suggestion.dataset.location;
+                        this.selectLocation(location);
+                    });
+                });
+            }
+
+            // Select a location from suggestions
+            selectLocation(location) {
+                this.updateLocationInput(location);
+                this.hideSuggestions();
+                this.clearError();
+
+                // Store the selected location
+                this.currentLocation = {
+                    address: location,
+                    source: 'manual'
+                };
+            }
+
+            // Handle keyboard navigation in suggestions
+            handleKeyNavigation(e) {
+                const suggestions = this.suggestionsContainer.querySelectorAll('.location-suggestion');
+                const currentActive = this.suggestionsContainer.querySelector('.location-suggestion.active');
+
+                let activeIndex = -1;
+                if (currentActive) {
+                    activeIndex = parseInt(currentActive.dataset.index);
+                }
+
+                switch (e.key) {
+                    case 'ArrowDown':
+                        e.preventDefault();
+                        activeIndex = Math.min(activeIndex + 1, suggestions.length - 1);
+                        this.highlightSuggestion(activeIndex);
+                        break;
+
+                    case 'ArrowUp':
+                        e.preventDefault();
+                        activeIndex = Math.max(activeIndex - 1, -1);
+                        this.highlightSuggestion(activeIndex);
+                        break;
+
+                    case 'Enter':
+                        e.preventDefault();
+                        if (currentActive) {
+                            const location = currentActive.dataset.location;
+                            this.selectLocation(location);
+                        }
+                        break;
+
+                    case 'Escape':
+                        this.hideSuggestions();
+                        break;
+                }
+            }
+
+            // Highlight suggestion during keyboard navigation
+            highlightSuggestion(index) {
+                const suggestions = this.suggestionsContainer.querySelectorAll('.location-suggestion');
+
+                suggestions.forEach(suggestion => {
+                    suggestion.classList.remove('active');
+                });
+
+                if (index >= 0 && index < suggestions.length) {
+                    suggestions[index].classList.add('active');
+                    suggestions[index].scrollIntoView({ block: 'nearest' });
+                }
+            }
+
+            // Show suggestions dropdown
+            showSuggestions() {
+                if (this.suggestionsContainer && this.suggestionsContainer.children.length > 0) {
+                    this.suggestionsContainer.classList.add('show');
+                }
+            }
+
+            // Hide suggestions dropdown
+            hideSuggestions() {
+                if (this.suggestionsContainer) {
+                    this.suggestionsContainer.classList.remove('show');
+                }
+            }
+
+            // Update location input field
+            updateLocationInput(address) {
+                if (this.locationInput) {
+                    this.locationInput.value = address;
+                    this.locationInput.classList.remove('detecting', 'error');
+                    this.locationInput.classList.add('success');
+                }
+            }
+
+            // Clear location
+            clearLocation() {
+                if (this.locationInput) {
+                    this.locationInput.value = '';
+                    this.locationInput.classList.remove('success', 'error', 'detecting');
+                    this.locationInput.placeholder = 'Enter your location';
+                }
+
+                this.currentLocation = null;
+                this.setStatus('', '');
+                this.clearError();
+                this.hideSuggestions();
+            }
+
+            // Set detecting state
+            setDetectingState(isDetecting) {
+                if (this.detectBtn) {
+                    this.detectBtn.disabled = isDetecting;
+                    this.detectBtn.classList.toggle('detecting', isDetecting);
+                }
+
+                if (this.locationInput) {
+                    this.locationInput.classList.toggle('detecting', isDetecting);
+                    if (isDetecting) {
+                        this.locationInput.placeholder = 'Detecting your location...';
+                    }
+                }
+
+                if (isDetecting) {
+                    this.setStatus('detecting', 'Detecting...');
+                }
+            }
+
+            // Set status message
+            setStatus(type, message) {
+                if (this.statusElement) {
+                    this.statusElement.className = `location-status ${type}`;
+                    this.statusElement.textContent = message;
+                }
+            }
+
+            // Handle location errors
+            handleLocationError(message) {
+                this.setStatus('error', 'Detection failed');
+                this.showError(message);
+
+                if (this.locationInput) {
+                    this.locationInput.classList.add('error');
+                    this.locationInput.placeholder = 'Enter your location manually';
+                }
+            }
+
+            // Show error message
+            showError(message) {
+                if (this.errorContainer) {
+                    this.errorContainer.textContent = message;
+                    this.errorContainer.classList.add('show');
+                }
+            }
+
+            // Clear error message
+            clearError() {
+                if (this.errorContainer) {
+                    this.errorContainer.classList.remove('show');
+                }
+            }
+
+            // Get user-friendly error messages
+            getLocationErrorMessage(error) {
+                switch (error.code) {
+                    case error.PERMISSION_DENIED:
+                        return 'Location access denied. Please enter your location manually.';
+                    case error.POSITION_UNAVAILABLE:
+                        return 'Location information unavailable. Please enter manually.';
+                    case error.TIMEOUT:
+                        return 'Location detection timed out. Please try again or enter manually.';
+                    default:
+                        return 'Unable to detect location. Please enter manually.';
+                }
+            }
+
+            // Get current location data
+            getCurrentLocation() {
+                return this.currentLocation;
+            }
+
+            // Get formatted location string
+            getLocationString() {
+                return this.currentLocation ? this.currentLocation.address : this.locationInput?.value || '';
+            }
+
+            // Check if location is detected automatically
+            isLocationDetected() {
+                return this.currentLocation && this.currentLocation.source !== 'manual';
+            }
+
+            // Validate location input
+            validateLocation() {
+                const value = this.locationInput?.value?.trim();
+
+                if (!value) {
+                    this.showError('Location is required');
+                    return false;
+                }
+
+                if (value.length < 2) {
+                    this.showError('Please enter a valid location');
+                    return false;
+                }
+
+                this.clearError();
+                return true;
+            }
+
+            // Watch position for continuous updates (optional)
+            startWatchingLocation() {
+                if (navigator.geolocation) {
+                    this.watchId = navigator.geolocation.watchPosition(
+                        (position) => {
+                            // Update location if significantly changed
+                            if (this.hasLocationChanged(position.coords)) {
+                                this.reverseGeocode(position.coords.latitude, position.coords.longitude)
+                                    .then(address => {
+                                        this.updateLocationInput(address);
+                                    });
+                            }
+                        },
+                        (error) => {
+                            console.error('Location watching failed:', error);
+                        },
+                        {
+                            enableHighAccuracy: false,
+                            timeout: 30000,
+                            maximumAge: 300000
+                        }
+                    );
+                }
+            }
+
+            // Stop watching location
+            stopWatchingLocation() {
+                if (this.watchId && navigator.geolocation) {
+                    navigator.geolocation.clearWatch(this.watchId);
+                    this.watchId = null;
+                }
+            }
+
+            // Check if location has significantly changed
+            hasLocationChanged(newCoords) {
+                if (!this.currentLocation) return true;
+
+                const distance = this.calculateDistance(
+                    this.currentLocation.lat,
+                    this.currentLocation.lng,
+                    newCoords.latitude,
+                    newCoords.longitude
+                );
+
+                return distance > 1000; // 1km threshold
+            }
+
+            // Calculate distance between two coordinates
+            calculateDistance(lat1, lng1, lat2, lng2) {
+                const R = 6371e3; // Earth's radius in meters
+                const φ1 = lat1 * Math.PI / 180;
+                const φ2 = lat2 * Math.PI / 180;
+                const Δφ = (lat2 - lat1) * Math.PI / 180;
+                const Δλ = (lng2 - lng1) * Math.PI / 180;
+
+                const a = Math.sin(Δφ / 2) * Math.sin(Δφ / 2) +
+                    Math.cos(φ1) * Math.cos(φ2) *
+                    Math.sin(Δλ / 2) * Math.sin(Δλ / 2);
+                const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+
+                return R * c;
+            }
+
+            // Destroy the location detector
+            destroy() {
+                this.stopWatchingLocation();
+                clearTimeout(this.debounceTimer);
+            }
+        }
+
+        // Location Manager to handle multiple location fields
+        class LocationManager {
+            constructor() {
+                this.detectors = new Map();
+                this.init();
+            }
+
+            init() {
+                // Initialize all location fields on the page
+                const locationGroups = document.querySelectorAll('[data-location-field]');
+
+                locationGroups.forEach(container => {
+                    const fieldName = container.dataset.locationField;
+                    const options = {
+                        autoDetect: fieldName === 'primary', // Only auto-detect for primary
+                        enableSuggestions: true,
+                        fallbackToIP: true,
+                        timeout: 10000
+                    };
+
+                    const detector = new LocationDetector(container, options);
+                    this.detectors.set(fieldName, detector);
+                });
+            }
+
+            // Get detector by field name
+            getDetector(fieldName) {
+                return this.detectors.get(fieldName);
+            }
+
+            // Get all locations
+            getAllLocations() {
+                const locations = {};
+
+                this.detectors.forEach((detector, fieldName) => {
+                    locations[fieldName] = {
+                        value: detector.getLocationString(),
+                        data: detector.getCurrentLocation(),
+                        isDetected: detector.isLocationDetected()
+                    };
+                });
+
+                return locations;
+            }
+
+            // Validate all location fields
+            validateAll() {
+                let isValid = true;
+                const errors = {};
+
+                this.detectors.forEach((detector, fieldName) => {
+                    if (!detector.validateLocation()) {
+                        isValid = false;
+                        errors[fieldName] = 'Invalid location';
+                    }
+                });
+
+                return { isValid, errors };
+            }
+
+            // Clear all locations
+            clearAll() {
+                this.detectors.forEach(detector => {
+                    detector.clearLocation();
+                });
+            }
+
+            // Destroy all detectors
+            destroy() {
+                this.detectors.forEach(detector => {
+                    detector.destroy();
+                });
+                this.detectors.clear();
+            }
+        }
+
+        // Initialize location manager when DOM is ready
+        document.addEventListener('DOMContentLoaded', () => {
+            // Initialize the location manager
+            window.locationManager = new LocationManager();
+        });
+
+        // Export for use in other scripts
+        if (typeof module !== 'undefined' && module.exports) {
+            module.exports = { LocationDetector, LocationManager };
+        }
+    </script>
+</body>
+
+</html>
