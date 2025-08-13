@@ -189,6 +189,9 @@ $conn->close();
 
       <button type="submit" class="btn-submit" name="register_cust">Register</button>
     </form>
+    <p><a href="new_login.php">Already Have an account?Login</a></p>
+    <p><a href="new_register_prov.php">Register as Provider</a></p>
+    
   </div>
 
   <script>

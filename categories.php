@@ -1,7 +1,7 @@
 <?php
 $conn = new mysqli("localhost", "root", "1234", "nandyal_dial");
 if ($conn->connect_error) die("Connection failed");
-session_start();
+
 
 
 ?>

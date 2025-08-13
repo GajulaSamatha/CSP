@@ -58,11 +58,11 @@ while (($row = fgetcsv($file)) !== false) {
         $lat,
         $lon,
         $location,
-        $rawImageJson
+        $image_names
     ) = $row;
 
     // Read image names from CSV JSON
-    $imageArray = json_decode($rawImageJson, true);
+    $imageArray = json_decode($image_names, true);
     if (!is_array($imageArray)) {
         $imageArray = [];
     }

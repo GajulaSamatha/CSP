@@ -13,6 +13,8 @@ if (isset($_GET['approve'])) {
         // Insert into main service_providers table
         $update = $pdo->prepare("UPDATE providers SET status='approved' WHERE id=?");
         $update->execute([$id]);
+        $update2 = $pdo->prepare("UPDATE admin_grant SET status='accepted' WHERE id=?");
+        $update2->execute([$id]);
         $insert=$pdo->prepare("INSERT INTO services (
         id,  email, telephone_number, whatsapp_number,
         bussiness_name, service, about, location, lat, lon, image_names
@@ -23,22 +25,27 @@ if (isset($_GET['approve'])) {
     FROM providers p WHERE p.id=?");
     $insert->execute([$id]);
 
-
-    
-      // PDO version of the category check and insert
-$checkStmt = $pdo->prepare("SELECT id FROM categories WHERE name = :category_name");
-$checkStmt->execute([':category_name' => $provider['category']]);
-
-if ($checkStmt->rowCount() === 0) {
-    // Category doesn't exist, insert it
-    $insertStmt = $pdo->prepare("INSERT INTO categories(name, description) VALUES(:name, :description)");
-    $insertStmt->execute([
-        ':name' => $provider['category'],
-        ':description' => $provider['description']
-    ]);
-}
       
-  
+        $checkStmt = $pdo->prepare("SELECT id FROM categories WHERE name = ?");
+        $checkStmt->execute([$provider['category']]);
+        
+        if ($checkStmt->rowCount() > 0) {
+            // Category exists - increment count
+            $updateStmt = $pdo->prepare(
+                "UPDATE categories SET category_count = category_count + 1 
+                 WHERE name = ?"
+            );
+            $updateStmt->execute([$provider['category']]);
+            return "Category count incremented successfully";
+        } else {
+            // New category - insert with count 1
+            $insertStmt = $pdo->prepare(
+                "INSERT INTO categories (name, description,category_count) 
+                 VALUES (?, ?,1)"
+            );
+            $insertStmt->execute([$provider['category'],$provider['description']]);
+            return "New category added successfully";
+        }
 
         // Delete from pending table
         $pdo->prepare("DELETE FROM admin_grant WHERE id=?")->execute([$id]);
@@ -52,7 +59,7 @@ if (isset($_GET['reject'])) {
 }
 
 // Fetch all pending registrations
-$pending = $pdo->query("SELECT * FROM admin_grant")->fetchAll();
+$pending = $pdo->query("SELECT * FROM admin_grant WHERE status='pending'")->fetchAll();
 ?>
 
 <!DOCTYPE html>

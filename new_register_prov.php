@@ -29,15 +29,26 @@ if(isset($_POST['register-prov'])){
     $loc = $_POST['location'];
     $category = ($_POST['category'] === 'Other') ? $_POST['other_category'] : $_POST['category'];
     if($_POST['category'] === 'Other'){
-      $checkQuery = "SELECT id FROM categories WHERE name = '$category'";
-      $checkResult = mysqli_query($conn, $checkQuery);
-
-      if (mysqli_num_rows($checkResult) === 0) {
-        $s=$conn->prepare("INSERT INTO categories(name,description) VALUES(?,?)");
-        $s->bind_param("ss",$category,$desc);
-        $s->execute();
-        $s->close();
-      }
+      $checkStmt = $pdo->prepare("SELECT id FROM categories WHERE name = ?");
+        $checkStmt->execute([$category]);
+        
+        if ($checkStmt->rowCount() > 0) {
+            // Category exists - increment count
+            $updateStmt = $pdo->prepare(
+                "UPDATE categories SET category_count = category_count + 1 
+                 WHERE name = ?"
+            );
+            $updateStmt->execute([$category]);
+            return "Category count incremented successfully";
+        } else {
+            // New category - insert with count 1
+            $insertStmt = $pdo->prepare(
+                "INSERT INTO categories (name, description,category_count) 
+                 VALUES (?, ?,1)"
+            );
+            $insertStmt->execute([$category,$desc]);
+            return "New category added successfully";
+        }
       
     }
 
@@ -293,6 +304,8 @@ var_dump($first, $last, $email, $pass, $bname, $category, $desc, $phone, $wa, $i
 
     <button type="submit" name="register-prov">Register Provider</button>
   </form>
+  <p><a href="new_provider_login.php">Already Have an account?Login</a></p>
+  <p><a href="new_register_cust.php">Register as a customer</a></p>
 </main>
 
 <script>

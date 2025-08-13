@@ -3,10 +3,7 @@ $conn = new mysqli("localhost", "root", "1234", "nandyal_dial");
 if ($conn->connect_error) die("Connection failed");
 session_start();
 //c.icon add it in sql statement
-$sql = "SELECT c.name,  COUNT(s.service) AS total_services
-    FROM categories c
-    LEFT JOIN services s ON c.name = s.service
-    GROUP BY c.name,c.description";
+$sql = "SELECT DISTINCT c.name, c.category_count FROM categories c";
 $result = mysqli_query($conn, $sql);
 ?>
 
@@ -95,7 +92,7 @@ $result = mysqli_query($conn, $sql);
                 </div>
                 <h3><?php echo $row['name']; ?></h3>
                 <!-- <p><?php //echo $row['description']; ?></p> -->
-                <span class="service-count"><?php echo $row['total_services']; ?> services</span>
+                <span class="service-count"><?php echo $row['category_count']; ?> services</span>
             </div>
         <?php } ?>
     </div>

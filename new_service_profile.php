@@ -3,11 +3,12 @@
 $pdo = new PDO("mysql:host=localhost;dbname=nandyal_dial", "root", "1234");
 
 // Get service ID from URL
-$service_id = isset($_GET['id']) ? intval($_GET['id']) : 0;
+$service_id = isset($_GET['id']) ? intval($_GET['id']) : 1;
 
 // Fetch service details
 $stmt = $pdo->prepare("SELECT * FROM services WHERE id = ?");
 $stmt->execute([$service_id]);
+echo(<h1>$service_id</h1>);
 $service = $stmt->fetch(PDO::FETCH_ASSOC);
 
 if (!$service) {
@@ -144,7 +145,7 @@ $images = json_decode($service['image_names'], true);
     </script>
 
     <!-- Rating Form -->
-    <!-- <div class="rating-form">
+    <div class="rating-form">
         <h3>Leave a Rating</h3>
         <form method="POST">
             <input type="text" name="user_name" placeholder="Your Name" required><br><br>
@@ -153,20 +154,20 @@ $images = json_decode($service['image_names'], true);
             <textarea name="comment" placeholder="Your Comment" required></textarea><br><br>
             <button type="submit">Submit Rating</button>
         </form>
-    </div> -->
+    </div>
 
     <!-- Ratings List -->
-    <!-- <div class="rating-list">
+    <div class="rating-list">
         <h3>Ratings</h3>
-        <?php //foreach ($ratings as $r) { ?>
+        <?php foreach ($ratings as $r) { ?>
             <div class="rating-item">
-                <strong><?php // echo htmlspecialchars($r['user_name']); ?></strong> 
-                (<?php // echo $r['rating']; ?>/5) - 
-                <?php // echo htmlspecialchars($r['comment']); ?><br>
-                <small><?php //echo $r['created_at']; ?></small>
+                <strong><?php  echo htmlspecialchars($r['user_name']); ?></strong> 
+                (<?php  echo $r['rating']; ?>/5) - 
+                <?php  echo htmlspecialchars($r['comment']); ?><br>
+                <small><?php echo $r['created_at']; ?></small>
             </div>
-        <?php //} ?>
-    </div> -->
+        <?php } ?>
+    </div>
 </div>
 </body>
 </html>

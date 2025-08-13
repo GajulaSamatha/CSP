@@ -92,6 +92,8 @@ if(isset($_POST['login'])){
         <input type="email" name="email" placeholder="Email" required>
         <input type="password" name="password" placeholder="Password" required>
         <input type="submit" name="login" value="Log In">
+        <p><a href="new_register_cust.php">Don't Have an account?Register</a></p>
+      <p><a href="new_provider_login.php">Login as Provider</a></p>
     </form>
 </body>
 </html>
