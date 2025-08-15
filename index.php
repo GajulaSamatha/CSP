@@ -331,76 +331,7 @@
     </div>
   </section>
 
-  <!-- <section class="search-section" style="padding: 2rem 1rem; background: #f8fafc">
-    <div style="
-          max-width: 800px;
-          margin: 0 auto;
-          background: white;
-          padding: 2rem;
-          border-radius: 12px;
-          box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
-        ">
-      <form style="
-            display: flex;
-            flex-wrap: wrap;
-            gap: 1rem;
-            align-items: center;
-            justify-content: space-between;
-          ">
-        <div style="flex: 1 1 300px">
-          <label for="service" style="display: block; font-weight: bold; margin-bottom: 0.5rem">Service</label>
-          <input type="text" id="service" placeholder="e.g. Electrician, Mechanic" style="
-                width: 100%;
-                padding: 0.75rem;
-                border: 1px solid #cbd5e1;
-                border-radius: 8px;
-              " />
-        </div>
-
-        <div style="flex: 1 1 300px; position: relative;">
-          <label for="location" style="display: block; font-weight: bold; margin-bottom: 0.5rem">Location</label>
-          <div style="position: relative; display: flex; align-items: center;">
-            <input type="text" id="location" placeholder="e.g. Hyderabad, Anantapur" style="
-                  width: 100%;
-                  padding: 0.75rem 50px 0.75rem 0.75rem;
-                  border: 1px solid #cbd5e1;
-                  border-radius: 8px;
-                " />
-            <button type="button" id="use-live-location" title="Use Live Location" style="
-                  position: absolute;
-                  right: 8px;
-                  top: 50%;
-                  transform: translateY(-50%);
-                  background: none;
-                  border: none;
-                  font-size: 1.2rem;
-                  cursor: pointer;
-                  padding: 4px;
-                  border-radius: 4px;
-                  color: #667eea;
-                  display: flex;
-                  align-items: center;
-                  justify-content: center;
-                ">📍</button>
-          </div>
-        </div>
-
-        <div style="flex: 1 1 100px; align-self: flex-end">
-          <button type="submit" style="
-                padding: 0.75rem 1.5rem;
-                background: #667eea;
-                color: white;
-                font-weight: bold;
-                border: none;
-                border-radius: 8px;
-                cursor: pointer;
-              ">
-            Search
-          </button>
-        </div>
-      </form>
-    </div>
-  </section> -->
+  
 
   <section class="features-section" id="features">
     <div class="container">

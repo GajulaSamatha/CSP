@@ -86,16 +86,23 @@ $result = mysqli_query($conn, $sql);
     <p>Choose from our comprehensive list of service categories to find the perfect professional.</p>
     <div class="categories-grid">
         <?php while ($row = mysqli_fetch_assoc($result)) { ?>
-            <div class="category-card">
-                <div class="category-icon">
-                    <!-- <img src="assets/icons/<?php //echo $row['icon']; ?>" alt="<?php //echo $row['name']; ?>"> -->
-                </div>
-                <h3><?php echo $row['name']; ?></h3>
+            <div class="category-card" onclick="clicked(`<?php echo $row['name']; ?>`)">
+                <!-- <div class="category-icon">
+                     <img src="assets/icons/<?php //echo $row['icon']; ?>" alt="<?php //echo $row['name']; ?>">
+                </div> -->
+                <h3> Category : <?php echo $row['name']; ?></h3>
                 <!-- <p><?php //echo $row['description']; ?></p> -->
-                <span class="service-count"><?php echo $row['category_count']; ?> services</span>
+                 <span>Count :</span>
+                <span class="service-count"> <?php echo $row['category_count']; ?> services</span>
             </div>
         <?php } ?>
     </div>
 </div>
+<?php include"footer.html"; ?>
+<script>
+    function clicked(name){
+        window.location.assign(`new_services.php?category=${name}`);
+    }
+</script>
 </body>
 </html>

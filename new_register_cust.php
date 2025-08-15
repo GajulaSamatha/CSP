@@ -55,92 +55,99 @@ $conn->close();
   <title>Registration Form</title>
   <style>
     * {
-      margin: 0;
-      padding: 0;
-      box-sizing: border-box;
-      font-family: Arial, sans-serif;
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
     }
-
     body {
-      background: #f0f2f5;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      height: 100vh;
+        background: linear-gradient(135deg, #6a11cb, #2575fc);
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        min-height: 100vh;
+        padding: 20px;
     }
-
     .form-container {
-      background: #fff;
-      padding: 25px 30px;
-      border-radius: 12px;
-      box-shadow: 0 5px 15px rgba(0,0,0,0.1);
-      width: 100%;
-      max-width: 450px;
+        background: white;
+        border-radius: 12px;
+        box-shadow: 0 8px 25px rgba(0,0,0,0.2);
+        width: 100%;
+        max-width: 500px;
+        padding: 30px;
+        animation: fadeIn 0.6s ease-in-out;
     }
-
-    .form-container h2 {
-      text-align: center;
-      margin-bottom: 20px;
-      color: #333;
+    h2 {
+        text-align: center;
+        margin-bottom: 20px;
+        color: #6a11cb;
     }
-
     .form-group {
-      display: flex;
-      flex-direction: column;
-      margin-bottom: 15px;
-    }
-
-    .form-group label {
-      font-weight: 500;
-      margin-bottom: 5px;
-      color: #555;
-    }
-
-    .form-group input {
-      padding: 10px;
-      border: 1px solid #ccc;
-      border-radius: 6px;
-      font-size: 16px;
-      outline: none;
-      transition: border 0.3s;
-    }
-
-    .form-group input:focus {
-      border-color: #4CAF50;
-    }
-
-    .form-row {
-      display: flex;
-      gap: 10px;
-    }
-
-    .form-row .form-group {
-      flex: 1;
-    }
-
-    .btn-submit {
-      width: 100%;
-      padding: 12px;
-      background: #4CAF50;
-      color: #fff;
-      border: none;
-      border-radius: 6px;
-      font-size: 18px;
-      cursor: pointer;
-      transition: background 0.3s;
-    }
-
-    .btn-submit:hover {
-      background: #45a049;
-    }
-
-    /* Responsive Design */
-    @media (max-width: 600px) {
-      .form-row {
+        display: flex;
         flex-direction: column;
-      }
+        margin-bottom: 15px;
     }
-  </style>
+    .form-group label {
+        font-weight: 500;
+        margin-bottom: 5px;
+        color: #555;
+    }
+    .form-group input {
+        padding: 12px;
+        border: 1px solid #ddd;
+        border-radius: 6px;
+        font-size: 16px;
+        transition: border-color 0.3s, box-shadow 0.3s;
+    }
+    .form-group input:focus {
+        border-color: #6a11cb;
+        box-shadow: 0 0 5px rgba(106, 17, 203, 0.5);
+        outline: none;
+    }
+    .form-row {
+        display: flex;
+        gap: 10px;
+    }
+    .form-row .form-group {
+        flex: 1;
+    }
+    .btn-submit {
+        width: 100%;
+        padding: 12px;
+        background: linear-gradient(90deg, #6a11cb, #2575fc);
+        color: #fff;
+        border: none;
+        border-radius: 6px;
+        font-size: 18px;
+        cursor: pointer;
+        transition: background 0.3s;
+    }
+    .btn-submit:hover {
+        background: linear-gradient(90deg, #5b0db8, #1f64d9);
+    }
+    p {
+        text-align: center;
+        margin-top: 10px;
+    }
+    p a {
+        color: #6a11cb;
+        text-decoration: none;
+        font-size: 14px;
+    }
+    p a:hover {
+        text-decoration: underline;
+        color: #2575fc;
+    }
+    @keyframes fadeIn {
+        from { opacity: 0; transform: translateY(10px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+    @media (max-width: 600px) {
+        .form-row {
+            flex-direction: column;
+        }
+    }
+</style>
 </head>
 <body>
 

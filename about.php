@@ -546,8 +546,8 @@ session_start();
         <h2 class="cta-title">Want to Explore?</h2>
         <p class="cta-subtitle">Start browsing or register to list your service</p>
         <div class="cta-buttons">
-          <a href="services.php" class="cta-button">Browse Services</a>
-          <a href="register.html" class="cta-button secondary">Register as Provider</a>
+          <a href="new_services.php" class="cta-button">Browse Services</a>
+          <a href="new_register_prov.php" class="cta-button secondary">Register as Provider</a>
         </div>
       </div>
     </section>

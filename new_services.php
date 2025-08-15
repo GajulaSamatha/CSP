@@ -198,25 +198,45 @@ if ($userLat && $userLon) {
             <?php endforeach; ?>
         </div>
     </div>
+    <div id="include-footer"></div>
 
-    <script>
-        // Auto-fill location
-        window.onload = () => {
-            if ("geolocation" in navigator) {
-                navigator.geolocation.getCurrentPosition((position) => {
-                    document.getElementById("lat").value = position.coords.latitude;
-                    document.getElementById("lon").value = position.coords.longitude;
-                }, () => {
-                    console.warn("Location access denied");
-                }, {
-                    timeout: 10000,
-                    enableHighAccuracy: true,
-                    maximumAge: 30000
-                });
-            } else {
-                alert("Geolocation not available");
-            }
-        };
-    </script>
-</body>
+  <script>
+async function includeHTML(id, file) {
+  try {
+    const res = await fetch(file);
+    const data = await res.text();
+    document.getElementById(id).innerHTML = data;
+  } catch (error) {
+    console.error(`Failed to load ${file}:`, error);
+  }
+}
+
+// Combine everything in one window.onload
+window.onload = async () => {
+  // Load footer
+  await includeHTML("include-footer", "footer.html");
+
+  // Geolocation
+  if ("geolocation" in navigator) {
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        document.getElementById("lat").value = position.coords.latitude;
+        document.getElementById("lon").value = position.coords.longitude;
+      },
+      () => {
+        console.warn("Location access denied");
+      },
+      { timeout: 10000, enableHighAccuracy: true, maximumAge: 30000 }
+    );
+  } else {
+    alert("Geolocation not available");
+  }
+
+  // Any other setup functions
+  if (typeof setupLocationDetection === "function") setupLocationDetection();
+  if (typeof setupHeaderBehavior === "function") setupHeaderBehavior();
+  if (typeof setupMap === "function") setupMap();
+};
+</script>
+    </body>
 </html>

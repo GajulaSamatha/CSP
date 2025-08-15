@@ -19,6 +19,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['login'])) {
 
         if ($user && $password===$user['password']) {
              $_SESSION['user_name'] = $user['first_name']." ".$user['last_name'];
+             $_SESSION['user_id'] = $user['id'];
             // $_SESSION['service_provider_id'] = $user['id'];
             // $_SESSION['service_provider_name'] = $user['business_name'];
             header("Location: index.php");
@@ -35,135 +36,110 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['login'])) {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Service Provider Login</title>
-    <style>
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-        }
-        
-        body {
-            background-color: #f5f7fa;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            min-height: 100vh;
+   <style>
+    * {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    }
+    body {
+        background: linear-gradient(135deg, #6a11cb, #2575fc);
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        min-height: 100vh;
+        padding: 20px;
+    }
+    .login-container {
+        background: white;
+        border-radius: 12px;
+        box-shadow: 0 8px 25px rgba(0,0,0,0.2);
+        width: 100%;
+        max-width: 400px;
+        padding: 30px;
+        text-align: center;
+        animation: fadeIn 0.6s ease-in-out;
+    }
+    h1 {
+        color: #6a11cb;
+        margin-bottom: 20px;
+        font-size: 24px;
+    }
+    .form-group {
+        margin-bottom: 20px;
+        text-align: left;
+    }
+    label {
+        display: block;
+        margin-bottom: 8px;
+        color: #555;
+        font-weight: 500;
+    }
+    input {
+        width: 100%;
+        padding: 12px 15px;
+        border: 1px solid #ddd;
+        border-radius: 6px;
+        font-size: 16px;
+        transition: border-color 0.3s, box-shadow 0.3s;
+    }
+    input:focus {
+        border-color: #6a11cb;
+        box-shadow: 0 0 5px rgba(106, 17, 203, 0.5);
+        outline: none;
+    }
+    .error {
+        color: #e74c3c;
+        margin-bottom: 15px;
+        font-size: 14px;
+    }
+    .btn {
+        background: linear-gradient(90deg, #6a11cb, #2575fc);
+        color: white;
+        border: none;
+        padding: 12px;
+        width: 100%;
+        border-radius: 6px;
+        font-size: 16px;
+        font-weight: 500;
+        cursor: pointer;
+        transition: background 0.4s ease;
+    }
+    .btn:hover {
+        background: linear-gradient(90deg, #5b0db8, #1f64d9);
+    }
+    .links {
+        margin-top: 20px;
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+    }
+    .links a {
+        color: #6a11cb;
+        text-decoration: none;
+        font-size: 14px;
+        transition: color 0.3s;
+    }
+    .links a:hover {
+        color: #2575fc;
+        text-decoration: underline;
+    }
+    @keyframes fadeIn {
+        from { opacity: 0; transform: translateY(10px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+    /* Mobile adjustments */
+    @media (max-width: 480px) {
+        .login-container {
             padding: 20px;
         }
-        
-        .login-container {
-            background: white;
-            border-radius: 10px;
-            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
-            width: 100%;
-            max-width: 400px;
-            padding: 30px;
-            text-align: center;
-        }
-        
-        .logo {
-            margin-bottom: 25px;
-        }
-        
-        .logo img {
-            width: 80px;
-            height: auto;
-        }
-        
         h1 {
-            color: #333;
-            margin-bottom: 20px;
-            font-size: 24px;
+            font-size: 20px;
         }
-        
-        .form-group {
-            margin-bottom: 20px;
-            text-align: left;
-        }
-        
-        label {
-            display: block;
-            margin-bottom: 8px;
-            color: #555;
-            font-weight: 500;
-        }
-        
-        input {
-            width: 100%;
-            padding: 12px 15px;
-            border: 1px solid #ddd;
-            border-radius: 6px;
-            font-size: 16px;
-            transition: border-color 0.3s;
-        }
-        
-        input:focus {
-            border-color: #4a90e2;
-            outline: none;
-        }
-        
-        .error {
-            color: #e74c3c;
-            margin-bottom: 15px;
-            font-size: 14px;
-        }
-        
-        .btn {
-            background-color: #4a90e2;
-            color: white;
-            border: none;
-            padding: 12px;
-            width: 100%;
-            border-radius: 6px;
-            font-size: 16px;
-            font-weight: 500;
-            cursor: pointer;
-            transition: background-color 0.3s;
-        }
-        
-        .btn:hover {
-            background-color: #357ab8;
-        }
-        
-        .links {
-            margin-top: 25px;
-            display: flex;
-            flex-direction: column;
-            gap: 12px;
-        }
-        
-        .links a {
-            color: #4a90e2;
-            text-decoration: none;
-            font-size: 14px;
-            transition: color 0.3s;
-        }
-        
-        .links a:hover {
-            color: #357ab8;
-            text-decoration: underline;
-        }
-        
-        .divider {
-            margin: 20px 0;
-            position: relative;
-            height: 1px;
-            background-color: #eee;
-        }
-        
-        .divider::before {
-            content: "or";
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            background: white;
-            padding: 0 10px;
-            color: #777;
-            font-size: 14px;
-        }
-    </style>
+    }
+</style>
+
 </head>
 <body>
     <div class="login-container">

@@ -129,6 +129,7 @@ $pending = $pdo->query("SELECT * FROM admin_grant WHERE status='pending'")->fetc
     <a href="admin_dashboard.php">Dashboard Home</a>
     <a href="admin.php">Grant Service</a>
     <a href="upload.php">Bulk Upload Services</a>
+    <a href="admin_delete.php">Delete Services</a>
 </div>
 
     <h2>Pending Service Provider Registrations</h2>

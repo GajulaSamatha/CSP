@@ -116,6 +116,7 @@
 <div class="navbar">
     <a href="admin.php">Grant Service</a>
     <a href="upload.php">Bulk Upload Services</a>
+    <a href="admin_delete.php">Delete Services</a>
 </div>
 
 <div class="container">

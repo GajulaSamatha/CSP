@@ -177,6 +177,7 @@ echo "CSV data imported successfully.";
     <a href="admin_dashboard.php">Dashboard Home</a>
     <a href="admin.php">Grant Service</a>
     <a href="upload.php">Bulk Upload Services</a>
+    <a href="admin_delete.php">Delete Services</a>
 </div>
 
 

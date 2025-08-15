@@ -12,7 +12,11 @@ session_start();
     }
 
     // Split session username into first and last name
-    list($first, $last) = explode(' ', $_SESSION['user_name'], 2);
+   // Split session username safely
+$nameParts = explode(' ', $_SESSION['user_name'], 2);
+$first = $nameParts[0];
+$last = isset($nameParts[1]) ? $nameParts[1] : ''; // if no last name, use empty string
+
     // echo($first.$last);
         $sql_customer="SELECT email,password FROM customers WHERE first_name='$first' AND last_name='$last'";
         $resp=$conn->query($sql_customer);
@@ -42,29 +46,39 @@ if(isset($_POST['add-new-service'])){
     $lon = $_POST['lon'];
     $loc = $_POST['location'];
     $category = ($_POST['category'] === 'Other') ? $_POST['other_category'] : $_POST['category'];
-    if($_POST['category'] === 'Other'){
-      $checkStmt = $pdo->prepare("SELECT id FROM categories WHERE name = ?");
-        $checkStmt->execute([$category]);
+if($_POST['category'] === 'Other') {
+    // First check if category exists
+    $checkStmt = $conn->prepare("SELECT id FROM categories WHERE name = ?");
+    $checkStmt->bind_param("s", $category);
+    $checkStmt->execute();
+    $checkStmt->store_result(); // Store the result set
+    
+    if ($checkStmt->num_rows > 0) {
+        // Category exists - increment count
+        $updateStmt = $conn->prepare(
+            "UPDATE categories SET category_count = category_count + 1 
+             WHERE name = ?"
+        );
+        $updateStmt->bind_param("s", $category);
+        $updateStmt->execute();
+        $updateStmt->close();
+        $checkStmt->close();
         
-        if ($checkStmt->rowCount() > 0) {
-            // Category exists - increment count
-            $updateStmt = $pdo->prepare(
-                "UPDATE categories SET category_count = category_count + 1 
-                 WHERE name = ?"
-            );
-            $updateStmt->execute([$category]);
-            return "Category count incremented successfully";
-        } else {
-            // New category - insert with count 1
-            $insertStmt = $pdo->prepare(
-                "INSERT INTO categories (name, description,category_count) 
-                 VALUES (?, ?,1)"
-            );
-            $insertStmt->execute([$category,$desc]);
-            return "New category added successfully";
-        }
-      
+    } else {
+        // New category - insert with count 1
+        $insertStmt = $conn->prepare(
+            "INSERT INTO categories (name, description, category_count) 
+             VALUES (?, ?, 1)"
+        );
+        $insertStmt->bind_param("ss", $category, $desc);
+        $insertStmt->execute();
+        $insertStmt->close();
+        $checkStmt->close();
+        
     }
+}
+      
+    
 
 
     // ✅ Handle multiple image uploads
@@ -104,13 +118,16 @@ echo $first, $last, $re['email'], $re['password'], $bname, $category, $desc, $ph
       $stmt_admin = $conn->prepare("INSERT INTO admin_grant 
         (id,first_name, last_name, email, business_name, category, description, phone_number, whatsapp_number, image_names, lat, lon, location)
         VALUES (?,?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
-    $stmt_admin->bind_param("isssssssssdds", $last_id,$first, $last, $re['email'], $bname, $category, $desc, $phone, $wa, $image_names, $lat, $lon, $loc);
+      $stmt_admin->bind_param("isssssssssdds", $last_id,$first, $last, $re['email'], $bname, $category, $desc, $phone, $wa, $image_names, $lat, $lon, $loc);
         $stmt_admin->execute();
-        $_SESSION['user_name']=$first.$last;
+        // $_SESSION['user_name']=$first.$last;
         $stmt->close();
         $stmt_admin->close();
         $conn->close();
-        echo "<script>alert('Provider registered successfully!');</script>";
+        // $insertStmt->close();
+        // $updateStmt->close();
+        // $checkStmt->close();
+        // echo "<script>alert('Provider registered successfully!');</script>";
         header("Location: index.php");
         exit();
 
@@ -130,58 +147,68 @@ echo $first, $last, $re['email'], $re['password'], $bname, $category, $desc, $ph
   <link rel="stylesheet" href="styles.css">
 </head>
 <style>
-    * {
-        box-sizing: border-box;
-      }
+  * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
 
-      body {
-        margin: 0;
-        font-family: system-ui, sans-serif;
-        background: #f9f9f9;
-        color: #333;
-        padding: 2rem;
-      }
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            background-color: #f8fafc;
+        }
+  /* Main Content Styles */
+        .main-content {
+            min-height: 100vh;
+        }
 
-      .container {
+      .main_content {
         max-width: 800px;
-        margin: 0 auto;
-        background: lightblue;
-        /* background: linear-gradient(to top right,lightgreen,yellow,white); */
-        padding: 2rem 3rem;
+        margin: 2rem auto 0 auto; /* top margin added */
+        padding: 2rem 2.5rem;
+        background: #fff;
         border-radius: 12px;
-        box-shadow: 0 4px 24px rgba(0, 0, 0, 0.08);
-      }
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+    }
+
 
       h1 {
         text-align: center;
         margin-bottom: 2rem;
-        font-size: 1.8rem;
+        font-size: 2rem;
+        color: #1877f2;
       }
 
       fieldset {
         border: none;
         margin-bottom: 2rem;
+        padding: 0;
       }
 
       legend {
-        font-weight: bold;
-        font-size: 1.1rem;
+        font-weight: 600;
+        font-size: 1.2rem;
         margin-bottom: 1rem;
+        color: #1877f2;
       }
 
       input, select, textarea {
         width: 100%;
-        padding: 10px 12px;
+        padding: 12px 14px;
         font-size: 1rem;
         border: 1px solid #ccc;
-        border-radius: 6px;
+        border-radius: 8px;
         margin-bottom: 1rem;
-        background: lightyellow;
+        background: #f0f2f5;
+        transition: 0.3s;
       }
 
       input:focus, select:focus, textarea:focus {
-        border-color: #0077ff;
+        border-color: #1877f2;
         outline: none;
+        box-shadow: 0 0 5px rgba(24, 119, 242, 0.3);
       }
 
       textarea {
@@ -209,17 +236,18 @@ echo $first, $last, $re['email'], $re['password'], $bname, $category, $desc, $ph
       button[type="submit"] {
         width: 100%;
         padding: 14px;
-        background-color: #da48c4ff;
-        color: white;
+        background-color: #1877f2;
+        color: #fff;
         font-size: 1rem;
+        font-weight: 600;
         border: none;
         border-radius: 8px;
         cursor: pointer;
-        transition: background 0.5s ease;
+        transition: background 0.3s ease;
       }
 
-      button:hover {
-        background-color: #793accff;
+      button[type="submit"]:hover {
+        background-color: #145dbf;
       }
 
       #imagePreview {
@@ -229,32 +257,26 @@ echo $first, $last, $re['email'], $re['password'], $bname, $category, $desc, $ph
       }
 
       #imagePreview img {
-        width: 60px;
-        height: 60px;
+        width: 70px;
+        height: 70px;
         object-fit: cover;
-        border-radius: 6px;
+        border-radius: 8px;
         border: 1px solid #ddd;
       }
 
+      @media (max-width: 600px) {
+        .form-row {
+          flex-direction: column;
+        }
+      }
 </style>
+
 <body>
 <?php include"new_header.php"; ?>
-<main class="container">
+<main class="main_content">
   <form method="POST" enctype="multipart/form-data" action="new_add_services.php">
     <h1>Add New Service</h1>
 
-    <!-- Personal Info -->
-    <!-- <fieldset>
-      <legend>Personal Information</legend>
-      <div class="form-row">
-        <input type="text" name="first_name" placeholder="First Name" required>
-        <input type="text" name="last_name" placeholder="Last Name" required>
-      </div>
-      <div class="form-row">
-        <input type="email" name="email" placeholder="Email" required>
-        <input type="password" name="password" placeholder="Password" required>
-      </div>
-    </fieldset> -->
 
     <!-- Business Info -->
     <fieldset>
@@ -300,12 +322,12 @@ echo $first, $last, $re['email'], $re['password'], $bname, $category, $desc, $ph
     <fieldset>
       <legend>Availability</legend>
       <div class="availability-grid">
-        <label>Mon–Fri Start <input type="time" name="mon_fri_start" required value="02:45"></label>
-        <label>Mon–Fri End <input type="time" name="mon_fri_end" required value="02:45"></label>
-        <label>Saturday Start <input type="time" name="sat_start" required value="02:45"></label>
-        <label>Saturday End <input type="time" name="sat_end" required value="02:45"></label>
-        <label>Sunday Start <input type="time" name="sun_start"  value="02:45"></label>
-        <label>Sunday End <input type="time" name="sun_end"  value="02:45"></label>
+        <label>Mon–Fri Start <input type="time" name="mon_fri_start" required></label>
+        <label>Mon–Fri End <input type="time" name="mon_fri_end" required></label>
+        <label>Saturday Start <input type="time" name="sat_start" required></label>
+        <label>Saturday End <input type="time" name="sat_end" required></label>
+        <label>Sunday Start <input type="time" name="sun_start" ></label>
+        <label>Sunday End <input type="time" name="sun_end" ></label>
       </div>
     </fieldset>
 

@@ -23,6 +23,7 @@ if(isset($_POST['login'])){
 
         if ($password === $row['password']) {
             $_SESSION['user_name'] = $row['first_name']." ".$row['last_name'];
+            $_SESSION['user_id'] = $row['id'];
             header("Location: index.php");
             exit();
         } else {
@@ -36,64 +37,131 @@ if(isset($_POST['login'])){
     exit();
 }
 ?>
-
 <!DOCTYPE html>
 <html>
 <head>
     <title>Customer Login</title>
     <style>
+        /* Page Background */
         body {
-            background-color: #e9ebee;
-            font-family: Arial, sans-serif;
+            margin: 0;
+            font-family: 'Segoe UI', Tahoma, sans-serif;
             display: flex;
             justify-content: center;
             align-items: center;
-            height: 100vh;
+            min-height: 100vh;
+            background: linear-gradient(135deg, #6a11cb, #2575fc);
+            padding: 20px;
         }
+
+        /* Login Card */
         .login-container {
-            background-color: white;
-            padding: 40px;
-            border-radius: 10px;
-            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
-            width: 350px;
-        }
-        .login-container h2 {
-            color: #1877f2;
+            background: #fff;
+            padding: 35px 30px;
+            border-radius: 20px;
+            width: 100%;
+            max-width: 380px;
+            box-shadow: 0px 10px 25px rgba(0, 0, 0, 0.15);
             text-align: center;
+            animation: fadeIn 0.5s ease-in-out;
         }
-        input[type="email"], input[type="password"] {
+
+        /* Heading */
+        .login-container h2 {
+            font-weight: bold;
+            margin-bottom: 8px;
+            color: #333;
+        }
+
+        .subtitle {
+            font-size: 14px;
+            color: #777;
+            margin-bottom: 25px;
+        }
+
+        /* Input Fields */
+        input[type="email"],
+        input[type="password"] {
             width: 100%;
             padding: 12px;
-            margin: 8px 0;
-            border: 1px solid #ddd;
-            border-radius: 6px;
+            margin-bottom: 15px;
+            border: 2px solid #4caf50;
+            border-radius: 10px;
+            font-size: 14px;
+            outline: none;
+            transition: all 0.3s ease;
+            box-sizing: border-box;
         }
+
+        input[type="email"]:focus,
+        input[type="password"]:focus {
+            box-shadow: 0 0 6px rgba(76, 175, 80, 0.5);
+            border-color: #45a049;
+        }
+
+        /* Submit Button */
         input[type="submit"] {
-            background-color: #1877f2;
+            background: linear-gradient(135deg, #6a11cb, #2575fc);
             color: white;
             border: none;
             padding: 12px;
             width: 100%;
-            border-radius: 6px;
+            border-radius: 10px;
             font-size: 16px;
             cursor: pointer;
+            transition: opacity 0.3s ease;
         }
-        .error {
-            color: red;
-            margin-bottom: 10px;
-            text-align: center;
+
+        input[type="submit"]:hover {
+            opacity: 0.9;
+        }
+
+        /* Links */
+        p {
+            margin-top: 15px;
+            font-size: 14px;
+        }
+
+        p a {
+            color: #2575fc;
+            text-decoration: none;
+        }
+
+        p a:hover {
+            text-decoration: underline;
+        }
+
+        /* Animation */
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Responsive */
+        @media (max-width: 480px) {
+            .login-container {
+                padding: 25px 20px;
+            }
+            .login-container h2 {
+                font-size: 22px;
+            }
+            input[type="submit"] {
+                font-size: 15px;
+            }
         }
     </style>
 </head>
 <body>
     <form class="login-container" action="new_login.php" method="POST">
         <h2>Customer Login</h2>
+        <div class="subtitle">Welcome back! Please log in to continue.</div>
         
-        <input type="email" name="email" placeholder="Email" required>
-        <input type="password" name="password" placeholder="Password" required>
+        <input type="email" name="email" placeholder="Enter your Email" required>
+        <input type="password" name="password" placeholder="Enter your Password" required>
         <input type="submit" name="login" value="Log In">
-        <p><a href="new_register_cust.php">Don't Have an account?Register</a></p>
-      <p><a href="new_provider_login.php">Login as Provider</a></p>
+        
+        <p><a href="new_register_cust.php">Don’t have an account? Register</a></p>
+        <p><a href="new_provider_login.php">Login as Provider</a></p>
     </form>
 </body>
 </html>
