@@ -2,19 +2,35 @@
 session_start();
 require 'db.php'; // DB connection
 
-$service_id = intval($_GET['id']);
-list($first, $last) = explode(' ', $_SESSION['user_name'], 2);
-$cs = "SELECT id FROM customers WHERE first_name = ? AND last_name = ?";
-$st=$pdo->prepare($cs);
-$st->execute([$first,$last]);
-$res=$st->fetch(PDO::FETCH_ASSOC);
-$customer_id = $res['id'] ?? null;
-$_SESSION['customer_id']=$res['id'];
+// Validate service ID
+$service_id = isset($_GET['id']) ? intval($_GET['id']) : 0;
+if ($service_id <= 0) {
+    die("Invalid service ID");
+}
+
+// Initialize customer variables safely
+$customer_id = null;
+if (isset($_SESSION['user_name']) && !empty(trim($_SESSION['user_name']))) {
+    $name_parts = explode(' ', trim($_SESSION['user_name']), 2);
+    $first = $name_parts[0] ?? '';
+    $last = $name_parts[1] ?? '';
+    
+    if (!empty($first)) {
+        $cs = "SELECT id FROM customers WHERE first_name = ? AND last_name = ?";
+        $st = $pdo->prepare($cs);
+        $st->execute([$first, $last]);
+        $res = $st->fetch(PDO::FETCH_ASSOC);
+        
+        if ($res && isset($res['id'])) {
+            $customer_id = $res['id'];
+            $_SESSION['customer_id'] = $customer_id;
+        }
+    }
+}
 
 // Fetch service details
-$sql = "SELECT p.bussiness_name, 
-               p.about, p.telephone_number, p.whatsapp_number, 
-               p.lat, p.lon, p.image_names,p.service
+$sql = "SELECT p.bussiness_name, p.about, p.telephone_number, 
+               p.whatsapp_number, p.lat, p.lon, p.image_names, p.service
         FROM services p
         WHERE p.id = ?";
 $stmt = $pdo->prepare($sql);
@@ -25,8 +41,15 @@ if (!$service) {
     die("Service not found.");
 }
 
-// Decode images JSON
-$images = json_decode($service['image_names'], true) ?? [];
+// Decode images JSON safely
+$images = [];
+if (!empty($service['image_names'])) {
+    $decoded_images = json_decode($service['image_names'], true);
+    if (is_array($decoded_images)) {
+        $images = $decoded_images;
+    }
+}
+
 
 // Fetch existing rating for logged-in customer
 $existing = null;
@@ -71,7 +94,6 @@ function isOpenNow($hours) {
     $now = new DateTime('now', $timezone);
     $dayOfWeek = $now->format('N');
     $currentTime = $now->format('H:i');
-    // echo("<h1>$currentTime</h1>"); // 1 (Mon) to 7 (Sun)
     
     if ($dayOfWeek >= 1 && $dayOfWeek <= 5) { // Mon-Fri
         $start = $hours['mon_fri_start'];
@@ -99,251 +121,417 @@ $isOpen = isOpenNow($s1res);
     <meta charset="UTF-8">
     <title><?= htmlspecialchars($service['bussiness_name']) ?> - Service Profile</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <style>
-        body {
-            font-family: Arial, sans-serif;
-            background: #f1f3f6;
+        :root {
+            --primary: #4A00E0;
+            --secondary: #8E2DE2;
+            --accent: #3498db;
+            --text-dark: #2d3748;
+            --text-medium: #4a5568;
+            --text-light: #718096;
+            --bg-light: #f8fafc;
+            --border-color: #e2e8f0;
+            --success: #10b981;
+            --warning: #f59e0b;
+            --danger: #ef4444;
+            --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+            --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+            --shadow-md: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+            --radius-sm: 0.375rem;
+            --radius-md: 0.5rem;
+            --radius-lg: 0.75rem;
+        }
+
+        * {
             margin: 0;
             padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Poppins', sans-serif;
+            background: var(--bg-light);
+            color: var(--text-dark);
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 20px;
         }
 
         .profile-container {
-            max-width: 800px;
-            margin: 20px auto;
             background: white;
-            padding: 25px;
-            border-radius: 10px;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            border-radius: var(--radius-lg);
+            box-shadow: var(--shadow);
+            overflow: hidden;
+            margin: 30px auto;
         }
 
+        /* Header Section */
         .business-header {
+            padding: 30px;
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            color: white;
+            position: relative;
             display: flex;
             justify-content: space-between;
-            align-items: center;
-            margin-bottom: 10px;
+            align-items: flex-start;
+        }
+
+        .business-info {
+            flex: 1;
         }
 
         .business-name {
-            font-size: 28px;
-            font-weight: bold;
-            margin: 0;
-            color: #333;
-        }
-
-        .status-badge {
-            padding: 6px 12px;
-            border-radius: 20px;
-            font-weight: bold;
-            font-size: 14px;
-        }
-
-        .status-open {
-            background-color: #e6f7ee;
-            color: #28a745;
-        }
-
-        .status-closed {
-            background-color: #fdecea;
-            color: #dc3545;
+            font-size: 2rem;
+            font-weight: 700;
+            margin-bottom: 5px;
         }
 
         .provider-name {
-            color: #666;
-            margin-bottom: 20px;
-            font-size: 16px;
+            font-size: 1.1rem;
+            opacity: 0.9;
+            margin-bottom: 15px;
         }
 
-        .slideshow-container {
+        .status-badge {
+            position: absolute;
+            top: 30px;
+            right: 30px;
+            padding: 8px 16px;
+            border-radius: 50px;
+            font-weight: 600;
+            font-size: 0.9rem;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .status-open {
+            background-color: rgba(255,255,255,0.2);
+            color: white;
+        }
+
+        .status-closed {
+            background-color: rgba(0,0,0,0.2);
+            color: white;
+        }
+
+        .status-badge i {
+            font-size: 1rem;
+        }
+
+        /* Image Gallery */
+        .gallery-container {
             position: relative;
-            max-width: 100%;
-            margin-bottom: 20px;
-            border-radius: 10px;
+            height: 400px;
             overflow: hidden;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
         }
 
-        .mySlides img {
+        .gallery-slides {
+            display: flex;
+            height: 100%;
+            transition: transform 0.5s ease;
+        }
+
+        .gallery-slide {
+            min-width: 100%;
+            height: 100%;
+        }
+
+        .gallery-slide img {
             width: 100%;
-            height: 350px;
+            height: 100%;
             object-fit: cover;
         }
 
-        .prev, .next {
+        .gallery-nav {
             position: absolute;
             top: 50%;
-            padding: 12px;
-            background: rgba(0,0,0,0.6);
-            color: white;
-            cursor: pointer;
-            border-radius: 50%;
+            width: 100%;
+            display: flex;
+            justify-content: space-between;
+            padding: 0 20px;
             transform: translateY(-50%);
-            transition: all 0.3s;
         }
 
-        .prev:hover, .next:hover {
-            background: rgba(0,0,0,0.8);
+        .gallery-nav-btn {
+            width: 40px;
+            height: 40px;
+            background: rgba(255,255,255,0.8);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--text-dark);
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: var(--shadow-sm);
         }
 
-        .prev { left: 15px; }
-        .next { right: 15px; }
-
-        .description, .contact-details, .navigate, .rating-container, .all-reviews {
-            margin-top: 25px;
+        .gallery-nav-btn:hover {
+            background: white;
+            transform: scale(1.1);
         }
 
-        .description h3, .contact-details h3, .all-reviews h3, .rating-container h3 {
-            color: #333;
-            border-bottom: 2px solid #f0f0f0;
-            padding-bottom: 8px;
-            margin-bottom: 15px;
+        .gallery-dots {
+            position: absolute;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            gap: 10px;
         }
 
-        .description p {
-            line-height: 1.6;
-            color: #555;
+        .gallery-dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: rgba(255,255,255,0.5);
+            cursor: pointer;
+            transition: all 0.3s ease;
         }
 
-        .contact-details p {
-            font-size: 16px;
-            margin: 8px 0;
+        .gallery-dot.active {
+            background: white;
+            transform: scale(1.2);
+        }
+
+        /* Content Sections */
+        .content-section {
+            padding: 30px;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .content-section:last-child {
+            border-bottom: none;
+        }
+
+        .section-title {
+            font-size: 1.5rem;
+            font-weight: 600;
+            margin-bottom: 20px;
+            color: var(--primary);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .section-title i {
+            color: var(--accent);
+        }
+
+        .description-text {
+            color: white;
+            line-height: 1.8;
+        }
+
+        /* Contact Info */
+        .contact-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+        }
+
+        .contact-item {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .contact-icon {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            background: rgba(74, 0, 224, 0.1);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--primary);
+            font-size: 1.2rem;
         }
 
         .contact-details a {
-            color: #0066cc;
+            color: var(--primary);
+            font-weight: 500;
             text-decoration: none;
-            margin-right: 15px;
-            display: inline-block;
+            transition: all 0.3s ease;
         }
 
         .contact-details a:hover {
+            color: var(--secondary);
             text-decoration: underline;
         }
 
-        .contact-details i {
-            margin-right: 8px;
-            width: 20px;
-            text-align: center;
+        .contact-label {
+            font-size: 0.9rem;
+            color: var(--text-light);
         }
 
-        .hours-section {
-            background: #f9f9f9;
-            border: 1px solid #e0e0e0;
-            padding: 20px;
-            margin-top: 25px;
-            border-radius: 10px;
+        /* Hours Section */
+        .hours-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
         }
 
-        .hours-section h3 {
-            margin-bottom: 15px;
-            font-size: 18px;
-            color: #333;
-        }
-
-        .hours-section ul {
-            list-style: none;
-            padding: 0;
-            margin: 0;
-        }
-
-        .hours-section li {
-            padding: 8px 0;
-            font-size: 15px;
+        .hours-item {
+            background: var(--bg-light);
+            padding: 15px;
+            border-radius: var(--radius-sm);
             display: flex;
             justify-content: space-between;
         }
 
-        .hours-section li strong {
-            width: 100px;
-            display: inline-block;
+        .hours-day {
+            font-weight: 500;
         }
 
-        .hours-section .closed {
-            color: #dc3545;
-            font-weight: bold;
+        .hours-time {
+            text-align: right;
         }
 
-        .navigate button {
-            background: #ff9f00;
-            padding: 12px 20px;
-            color: white;
-            border: none;
-            border-radius: 6px;
+        .closed {
+            color: var(--danger);
+            font-weight: 500;
+        }
+
+        /* Action Buttons */
+        .action-buttons {
+            display: flex;
+            gap: 15px;
+            margin-top: 20px;
+        }
+
+        .btn {
+            padding: 12px 24px;
+            border-radius: var(--radius-md);
+            font-weight: 600;
+            text-align: center;
             cursor: pointer;
-            font-size: 16px;
-            font-weight: bold;
-            transition: background 0.3s;
-            width: 100%;
+            transition: all 0.3s ease;
+            border: none;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
         }
 
-        .navigate button:hover {
-            background: #e68a00;
+        .btn-primary {
+            background: var(--primary);
+            color: white;
         }
 
-        .navigate button:disabled {
-            background: #cccccc;
+        .btn-primary:hover {
+            background: var(--secondary);
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-md);
+        }
+
+        .btn-secondary {
+            background: white;
+            color: var(--primary);
+            border: 1px solid var(--primary);
+        }
+
+        .btn-secondary:hover {
+            background: rgba(74, 0, 224, 0.05);
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-md);
+        }
+
+        .btn:disabled {
+            opacity: 0.6;
             cursor: not-allowed;
+            transform: none !important;
+            box-shadow: none !important;
         }
 
         /* Rating System */
+        .rating-container {
+            background: var(--bg-light);
+            padding: 25px;
+            border-radius: var(--radius-md);
+        }
+
+        .rating-title {
+            font-size: 1.2rem;
+            margin-bottom: 15px;
+            color: var(--text-dark);
+        }
+
         .star-rating {
             display: flex;
             flex-direction: row-reverse;
             justify-content: flex-end;
+            margin-bottom: 20px;
         }
 
-        .star-rating input { display: none; }
+        .star-rating input { 
+            display: none; 
+        }
+        
         .star-rating label { 
-            color: #ccc; 
-            font-size: 28px; 
+            color: #ddd; 
+            font-size: 2rem; 
             cursor: pointer; 
             margin-right: 5px;
-            transition: color 0.2s;
+            transition: all 0.2s;
         }
-        .star-rating input:checked ~ label i,
-        .star-rating label:hover i,
-        .star-rating label:hover ~ label i { color: #ff9f00; }
+        
+        .star-rating input:checked ~ label,
+        .star-rating label:hover,
+        .star-rating label:hover ~ label { 
+            color: var(--warning); 
+        }
 
         .rating-form textarea {
             width: 100%;
-            padding: 12px;
-            border-radius: 8px;
-            border: 1px solid #ddd;
+            padding: 15px;
+            border-radius: var(--radius-sm);
+            border: 1px solid var(--border-color);
             margin-top: 15px;
-            min-height: 100px;
-            font-family: Arial, sans-serif;
+            min-height: 120px;
+            font-family: inherit;
             resize: vertical;
+            transition: all 0.3s ease;
         }
 
-        .submit-btn {
-            margin-top: 15px;
-            background-color: #ff9f00;
-            padding: 12px 20px;
-            border: none;
-            color: white;
-            font-size: 16px;
-            font-weight: bold;
-            cursor: pointer;
-            border-radius: 6px;
-            transition: background 0.3s;
-            width: 100%;
+        .rating-form textarea:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(74, 0, 224, 0.1);
         }
 
-        .submit-btn:hover { 
-            background-color: #e68a00; 
+        /* Reviews Section */
+        .reviews-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
         }
 
-        /* Reviews */
-        .all-reviews {
-            margin-top: 30px;
+        .reviews-count {
+            font-size: 0.9rem;
+            color: var(--text-light);
         }
 
         .review-card {
-            background: #fff;
-            padding: 18px;
-            margin-bottom: 15px;
-            border-radius: 8px;
-            box-shadow: 0 2px 6px rgba(0,0,0,0.05);
-            border: 1px solid #eee;
+            background: white;
+            padding: 20px;
+            border-radius: var(--radius-md);
+            box-shadow: var(--shadow-sm);
+            margin-bottom: 20px;
+            border: 1px solid var(--border-color);
+            transition: all 0.3s ease;
+        }
+
+        .review-card:hover {
+            transform: translateY(-3px);
+            box-shadow: var(--shadow);
         }
 
         .review-header {
@@ -353,180 +541,331 @@ $isOpen = isOpenNow($s1res);
             margin-bottom: 10px;
         }
 
-        .stars i { 
-            color: #ccc; 
-            font-size: 18px;
-        }
-        .stars .filled { color: #ff9f00; }
-
-        .reviewer-name { 
-            font-weight: bold;
-            color: #333;
+        .reviewer {
+            display: flex;
+            align-items: center;
+            gap: 10px;
         }
 
-        .review-message { 
+        .reviewer-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 600;
+        }
+
+        .reviewer-name {
+            font-weight: 600;
+            color: var(--text-dark);
+        }
+
+        .review-date {
+            font-size: 0.8rem;
+            color: var(--text-light);
+        }
+
+        .review-stars {
+            color: var(--warning);
+        }
+
+        .review-message {
+            color: var(--text-medium);
             margin-top: 10px;
-            color: #555;
-            line-height: 1.5;
-        }
-        
-        .review-date { 
-            font-size: 13px; 
-            color: #999; 
-            margin-top: 8px;
-            display: block;
         }
 
+        .no-reviews {
+            text-align: center;
+            padding: 40px;
+            color: var(--text-light);
+        }
+
+        /* Responsive Styles */
         @media (max-width: 768px) {
-            .profile-container {
-                margin: 10px;
-                padding: 15px;
+            .business-header {
+                flex-direction: column;
+                padding: 20px;
             }
-            
+
+            .status-badge {
+                position: static;
+                margin-top: 15px;
+                align-self: flex-start;
+            }
+
+            .gallery-container {
+                height: 300px;
+            }
+
+            .contact-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .action-buttons {
+                flex-direction: column;
+            }
+
+            .btn {
+                width: 100%;
+            }
+        }
+
+        @media (max-width: 480px) {
             .business-name {
-                font-size: 24px;
+                font-size: 1.5rem;
             }
-            
-            .mySlides img {
+
+            .gallery-container {
                 height: 250px;
+            }
+
+            .content-section {
+                padding: 20px;
             }
         }
     </style>
 </head>
 <body>
-<?php include"new_header.php"; ?>
-<div class="profile-container">
-    <!-- Business & Provider -->
-    <div class="business-header">
-        <div>
-            <h1 class="business-name"><?= htmlspecialchars($service['bussiness_name']) ?></h1>
-            <p class="provider-name">Category: <?= htmlspecialchars($service['service']) ?></p>
-        </div>
-        <div class="status-badge <?= $isOpen ? 'status-open' : 'status-closed' ?>">
-            <?= $isOpen ? 'OPEN NOW' : 'CLOSED' ?>
-        </div>
-    </div>
+<?php include "new_header.php"; ?>
 
-    <!-- Slideshow -->
-    <div class="slideshow-container">
-        <?php foreach ($images as $index => $img): ?>
-            <div class="mySlides fade">
-                <img src="uploads/<?= htmlspecialchars($img) ?>" alt="Service Image">
+<div class="container">
+    <div class="profile-container">
+        <!-- Business Header -->
+        <div class="business-header">
+            <div class="business-info">
+                <h1 class="business-name"><?= htmlspecialchars($service['bussiness_name']) ?></h1>
+                <p class="provider-name">Category: <?= htmlspecialchars($service['service']) ?></p>
+                <p class="description-text"><?= nl2br(htmlspecialchars($service['about'])) ?></p>
             </div>
-        <?php endforeach; ?>
-        <a class="prev" onclick="plusSlides(-1)">❮</a>
-        <a class="next" onclick="plusSlides(1)">❯</a>
-    </div>
+            <div class="status-badge <?= $isOpen ? 'status-open' : 'status-closed' ?>">
+                <i class="fas fa-<?= $isOpen ? 'check-circle' : 'times-circle' ?>"></i>
+                <?= $isOpen ? 'OPEN NOW' : 'CLOSED' ?>
+            </div>
+        </div>
 
-    <!-- Description -->
-    <div class="description">
-        <h3>Description</h3>
-        <p><?= nl2br(htmlspecialchars($service['about'])) ?></p>
-    </div>
+        <!-- Image Gallery -->
+        <div class="gallery-container">
+            <div class="gallery-slides" id="gallerySlides">
+                <?php foreach ($images as $index => $img): ?>
+                    <div class="gallery-slide">
+                        <img src="uploads/<?= htmlspecialchars($img) ?>" alt="Service Image <?= $index + 1 ?>">
+                    </div>
+                <?php endforeach; ?>
+            </div>
+            <div class="gallery-nav">
+                <div class="gallery-nav-btn" onclick="prevSlide()"><i class="fas fa-chevron-left"></i></div>
+                <div class="gallery-nav-btn" onclick="nextSlide()"><i class="fas fa-chevron-right"></i></div>
+            </div>
+            <div class="gallery-dots" id="galleryDots">
+                <?php foreach ($images as $index => $img): ?>
+                    <div class="gallery-dot <?= $index === 0 ? 'active' : '' ?>" onclick="goToSlide(<?= $index ?>)"></div>
+                <?php endforeach; ?>
+            </div>
+        </div>
 
-    <!-- Contact -->
-    <div class="contact-details">
-        <h3>Contact</h3>
-        <p>
-            <a href="tel:<?= htmlspecialchars($service['telephone_number']) ?>"><i class="fas fa-phone"></i> <?= htmlspecialchars($service['telephone_number']) ?></a>
-            <?php if (!empty($service['whatsapp_number'])): ?>
-                <a href="https://wa.me/+91<?= preg_replace('/\\D/', '', $service['whatsapp_number']) ?>" target="_blank"><i class="fab fa-whatsapp"></i> WhatsApp</a>
-            <?php endif; ?>
-        </p>
-    </div>
+        <!-- Contact Information -->
+        <div class="content-section">
+            <h2 class="section-title"><i class="fas fa-phone-alt"></i> Contact Information</h2>
+            <div class="contact-grid">
+                <div class="contact-item">
+                    <div class="contact-icon">
+                        <i class="fas fa-phone"></i>
+                    </div>
+                    <div class="contact-details">
+                        <span class="contact-label">Phone Number</span>
+                        <a href="tel:<?= htmlspecialchars($service['telephone_number']) ?>"><?= htmlspecialchars($service['telephone_number']) ?></a>
+                    </div>
+                </div>
+                <?php if (!empty($service['whatsapp_number'])): ?>
+                <div class="contact-item">
+                    <div class="contact-icon">
+                        <i class="fab fa-whatsapp"></i>
+                    </div>
+                    <div class="contact-details">
+                        <span class="contact-label">WhatsApp</span>
+                        <a href="https://wa.me/+91<?= preg_replace('/\\D/', '', $service['whatsapp_number']) ?>" target="_blank">Chat on WhatsApp</a>
+                    </div>
+                </div>
+                <?php endif; ?>
+                <div class="contact-item">
+                    <div class="contact-icon">
+                        <i class="fas fa-map-marker-alt"></i>
+                    </div>
+                    <div class="contact-details">
+                        <span class="contact-label">Location</span>
+                        <a href="#" onclick="navigateToService(); return false;">Get Directions</a>
+                    </div>
+                </div>
+            </div>
+        </div>
 
-    <!-- Opening Hours -->
-    <div class="hours-section">
-        <h3>Opening Hours</h3>
-        <ul>
-            <li><strong>Mon–Fri:</strong> <?= formatHours($s1res['mon_fri_start'], $s1res['mon_fri_end']); ?></li>
-            <li><strong>Saturday:</strong> <?= formatHours($s1res['sat_start'], $s1res['sat_end']); ?></li>
-            <li><strong>Sunday:</strong> <?= formatHours($s1res['sun_start'], $s1res['sun_end']); ?></li>
-        </ul>
-        <?php echo($s1res['mon_fri_start'].$s1res['mon_fri_end']);  ?>
-    </div>
+        <!-- Opening Hours -->
+        <div class="content-section">
+            <h2 class="section-title"><i class="far fa-clock"></i> Opening Hours</h2>
+            <div class="hours-grid">
+                <div class="hours-item">
+                    <span class="hours-day">Monday - Friday</span>
+                    <span class="hours-time"><?= formatHours($s1res['mon_fri_start'], $s1res['mon_fri_end']) ?></span>
+                </div>
+                <div class="hours-item">
+                    <span class="hours-day">Saturday</span>
+                    <span class="hours-time"><?= formatHours($s1res['sat_start'], $s1res['sat_end']) ?></span>
+                </div>
+                <div class="hours-item">
+                    <span class="hours-day">Sunday</span>
+                    <span class="hours-time"><?= formatHours($s1res['sun_start'], $s1res['sun_end']) ?></span>
+                </div>
+            </div>
+        </div>
 
-    <!-- Navigate Button -->
-    <div class="navigate">
-        <button onclick="navigateToService()" <?= !$isOpen ? 'disabled title="Service is currently closed"' : '' ?>>
-            <?= $isOpen ? 'Navigate to Service' : 'Currently Closed' ?>
-        </button>
-    </div>
+        <!-- Action Buttons -->
+        <div class="content-section">
+            <div class="action-buttons">
+                <button class="btn btn-primary" onclick="navigateToService()" <?= !$isOpen ? 'disabled' : '' ?>>
+                    <i class="fas fa-directions"></i> Get Directions
+                </button>
+                <button class="btn btn-secondary" onclick="window.open('tel:<?= htmlspecialchars($service['telephone_number']) ?>', '_self')">
+                    <i class="fas fa-phone"></i> Call Now
+                </button>
+                <?php if (!empty($service['whatsapp_number'])): ?>
+                <button class="btn btn-secondary" onclick="window.open('https://wa.me/+91<?= preg_replace('/\\D/', '', $service['whatsapp_number']) ?>', '_blank')">
+                    <i class="fab fa-whatsapp"></i> WhatsApp
+                </button>
+                <?php endif; ?>
+            </div>
+        </div>
 
-    <!-- Rating System -->
-    <div class="rating-container">
-        <h3><?= $existing ? 'Edit Your Rating' : 'Rate this Service' ?></h3>
-        <form action="rate_service.php" method="POST" class="rating-form">
-            <input type="hidden" name="service_id" value="<?= $service_id ?>">
+        <!-- Rating System -->
+        <div class="content-section">
+            <h2 class="section-title"><i class="far fa-star"></i> <?= $existing ? 'Edit Your Rating' : 'Rate This Service' ?></h2>
+            <div class="rating-container">
+                <form action="rate_service.php" method="POST" class="rating-form">
+                    <input type="hidden" name="service_id" value="<?= $service_id ?>">
 
-            <div class="star-rating">
-                <?php for ($i = 5; $i >= 1; $i--): ?>
-                    <input type="radio" id="star<?= $i ?>" name="rating" value="<?= $i ?>"
-                           <?= (isset($existing['rating']) && $existing['rating'] == $i) ? 'checked' : '' ?> required>
-                    <label for="star<?= $i ?>" title="<?= $i ?> stars">
-                        <i class="fas fa-star"></i>
-                    </label>
-                <?php endfor; ?>
+                    <div class="star-rating">
+                        <?php for ($i = 5; $i >= 1; $i--): ?>
+                            <input type="radio" id="star<?= $i ?>" name="rating" value="<?= $i ?>"
+                                   <?= (isset($existing['rating']) && $existing['rating'] == $i) ? 'checked' : '' ?> required>
+                            <label for="star<?= $i ?>" title="<?= $i ?> stars">
+                                <i class="fas fa-star"></i>
+                            </label>
+                        <?php endfor; ?>
+                    </div>
+
+                    <textarea name="message" placeholder="Share your experience (What did you like? What could be improved?)..." required><?= $existing['message'] ?? '' ?></textarea>
+
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-paper-plane"></i> <?= $existing ? 'Update Rating' : 'Submit Review' ?>
+                    </button>
+                </form>
+            </div>
+        </div>
+
+        <!-- Customer Reviews -->
+        <div class="content-section">
+            <div class="reviews-header">
+                <h2 class="section-title"><i class="far fa-comment-alt"></i> Customer Reviews</h2>
+                <span class="reviews-count"><?= count($ratings) ?> review<?= count($ratings) !== 1 ? 's' : '' ?></span>
             </div>
 
-            <textarea name="message" placeholder="Share your experience..." required><?= $existing['message'] ?? '' ?></textarea>
-
-            <button type="submit" class="submit-btn">
-                <?= $existing ? 'Update Rating' : 'Submit Rating' ?>
-            </button>
-        </form>
-    </div>
-
-    <!-- All Reviews -->
-    <div class="all-reviews">
-        <h3>Customer Reviews</h3>
-        <?php if (empty($ratings)): ?>
-            <p>No reviews yet. Be the first to review!</p>
-        <?php else: ?>
-            <?php foreach ($ratings as $row): ?>
-                <div class="review-card">
-                    <div class="review-header">
-                        <span class="reviewer-name"><?= htmlspecialchars($row['first_name'] . ' ' . $row['last_name']) ?></span>
-                        <div class="stars">
-                            <?php for ($i = 1; $i <= 5; $i++): ?>
-                                <i class="fas fa-star <?= ($i <= $row['rating']) ? 'filled' : '' ?>"></i>
-                            <?php endfor; ?>
+            <?php if (empty($ratings)): ?>
+                <div class="no-reviews">
+                    <i class="far fa-comment-dots" style="font-size: 2rem; margin-bottom: 10px;"></i>
+                    <p>No reviews yet. Be the first to review this service!</p>
+                </div>
+            <?php else: ?>
+                <?php foreach ($ratings as $row): ?>
+                    <div class="review-card">
+                        <div class="review-header">
+                            <div class="reviewer">
+                                <div class="reviewer-avatar">
+                                    <?= strtoupper(substr($row['first_name'], 0, 1) . substr($row['last_name'], 0, 1)) ?>
+                                </div>
+                                <div>
+                                    <div class="reviewer-name"><?= htmlspecialchars($row['first_name'] . ' ' . $row['last_name']) ?></div>
+                                    <div class="review-date"><?= date('F j, Y', strtotime($row['updated_at'])) ?></div>
+                                </div>
+                            </div>
+                            <div class="review-stars">
+                                <?php for ($i = 1; $i <= 5; $i++): ?>
+                                    <i class="fas fa-star <?= ($i <= $row['rating']) ? '' : 'far' ?>"></i>
+                                <?php endfor; ?>
+                            </div>
+                        </div>
+                        <div class="review-message">
+                            <?= nl2br(htmlspecialchars($row['message'])) ?>
                         </div>
                     </div>
-                    <p class="review-message"><?= nl2br(htmlspecialchars($row['message'])) ?></p>
-                    <small class="review-date">Posted on: <?= date('M j, Y', strtotime($row['updated_at'])) ?></small>
-                </div>
-            <?php endforeach; ?>
-        <?php endif; ?>
+                <?php endforeach; ?>
+            <?php endif; ?>
+        </div>
     </div>
 </div>
-
+  <?php include "footer.html"; ?>
 <script>
-    let slideIndex = 1;
-    showSlides(slideIndex);
+    // Image Gallery
+    let currentSlide = 0;
+    const slides = document.querySelectorAll('.gallery-slide');
+    const dots = document.querySelectorAll('.gallery-dot');
 
-    function plusSlides(n) { showSlides(slideIndex += n); }
-    function showSlides(n) {
-        let i;
-        let slides = document.getElementsByClassName("mySlides");
-        if (n > slides.length) { slideIndex = 1 }
-        if (n < 1) { slideIndex = slides.length }
-        for (i = 0; i < slides.length; i++) { slides[i].style.display = "none"; }
-        slides[slideIndex - 1].style.display = "block";
+    function showSlide(n) {
+        currentSlide = (n + slides.length) % slides.length;
+        document.getElementById('gallerySlides').style.transform = `translateX(-${currentSlide * 100}%)`;
+        
+        // Update dots
+        dots.forEach((dot, index) => {
+            dot.classList.toggle('active', index === currentSlide);
+        });
     }
 
+    function nextSlide() {
+        showSlide(currentSlide + 1);
+    }
+
+    function prevSlide() {
+        showSlide(currentSlide - 1);
+    }
+
+    function goToSlide(n) {
+        showSlide(n);
+    }
+
+    // Auto-rotate slides every 5 seconds
+    let slideInterval = setInterval(nextSlide, 5000);
+
+    // Pause auto-rotation when hovering over gallery
+    document.querySelector('.gallery-container').addEventListener('mouseenter', () => {
+        clearInterval(slideInterval);
+    });
+
+    // Resume auto-rotation when leaving gallery
+    document.querySelector('.gallery-container').addEventListener('mouseleave', () => {
+        slideInterval = setInterval(nextSlide, 5000);
+    });
+
+    // Navigation function
     function navigateToService() {
-        if (navigator.geolocation) {
-            navigator.geolocation.getCurrentPosition(function(position) {
-                let customerLat = position.coords.latitude;
-                let customerLon = position.coords.longitude;
-                let serviceLat = <?= $service['lat'] ?>;
-                let serviceLon = <?= $service['lon'] ?>;
-                window.open(`https://www.google.com/maps/dir/${customerLat},${customerLon}/${serviceLat},${serviceLon}`, '_blank');
-            });
-        } else {
-            alert("Geolocation not supported.");
-        }
+        <?php if ($isOpen): ?>
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(function(position) {
+                    let customerLat = position.coords.latitude;
+                    let customerLon = position.coords.longitude;
+                    let serviceLat = <?= $service['lat'] ?>;
+                    let serviceLon = <?= $service['lon'] ?>;
+                    window.open(`https://www.google.com/maps/dir/${customerLat},${customerLon}/${serviceLat},${serviceLon}`, '_blank');
+                }, function(error) {
+                    alert("Could not get your location. Please enable location services.");
+                });
+            } else {
+                alert("Geolocation is not supported by your browser.");
+            }
+        <?php else: ?>
+            alert("This service is currently closed. Please check the opening hours.");
+        <?php endif; ?>
     }
 </script>
 

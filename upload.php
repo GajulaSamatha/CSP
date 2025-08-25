@@ -130,8 +130,9 @@ echo "CSV data imported successfully.";
 <head>
     <title>CSV Import</title>
     <style>
-        body { font-family: Arial, sans-serif; max-width: 500px; margin: 20px auto; padding: 20px; text-align:center;}
-        .container { padding: 20px; border: none; border-radius: 5px;box-shadow:0 0 6px black; }
+        body {
+             font-family: Arial, sans-serif; max-width: 100vw; margin: 20px auto; padding: 20px; text-align:center;}
+        .container { width:500px; margin: 10px auto; padding: 20px; border: none; border-radius: 5px;box-shadow:0 0 6px black; }
         .result { margin: 20px 0; padding: 15px; background: #f0f8ff; border-radius: 5px; }
         .back-link { display: block; margin-top: 20px; }
         .error { color: #d00; }
@@ -176,8 +177,9 @@ echo "CSV data imported successfully.";
     <div class="navbar">
     <a href="admin_dashboard.php">Dashboard Home</a>
     <a href="admin.php">Grant Service</a>
-    <a href="upload.php">Bulk Upload Services</a>
     <a href="admin_delete.php">Delete Services</a>
+    <a href="admin_contact_msg.php">User Messages</a>
+    <a href="admin_logout.php" class="logout-btn">Logout</a>
 </div>
 
 

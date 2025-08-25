@@ -1,0 +1,2 @@
+$first_name,$last_name,$email,$password,$phone_number,$whatsapp_number,$business_name,$description,$category,$mon_fri_start,$mon_fri_end,$sat_start,$sat_end,$sun_start,$sun_end,$lat,$lon,$location,$image_names
+s,venkappa,venkappa@gmail.com,12345,7947110938,9494626126,S Venkappa Ayurvedic Store,"All ayurvedic items are available",Ayurvedic Store,10:00:00,21:00:00,10:00:00,21:00:00,10:00:00,16:00:00,15.4903034,78.4856139,"1/119a, Opposite Ansar Jeweller's, Nandyal Urban, Main Bazaar, Nandyal Ho-518501","[""venkappa.jpg""]"

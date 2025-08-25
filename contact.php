@@ -14,8 +14,8 @@ session_start();
   <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <style>
         :root {
-            --primary-color: #2563eb;
-            --secondary-color: #64748b;
+            --primary-color: #4A00E0;
+            --secondary-color: #4A00E0;
             --success-color: #10b981;
             --danger-color: #ef4444;
             --light-bg: #f8fafc;
@@ -540,15 +540,7 @@ session_start();
             setTimeout(setupHeaderBehavior, 200);
         });
     </script>
-        <script type="text/javascript">
-            function googleTranslateElementInit() {
-              new google.translate.TranslateElement({
-                pageLanguage: 'en',
-                layout: google.translate.TranslateElement.InlineLayout.HORIZONTAL,
-                autoDisplay: false
-              }, 'google_translate_element');
-            }
-          </script>
+       
           <script type="text/javascript" src="//translate.google.com/translate_a/element.js?cb=googleTranslateElementInit"></script>
        
 </body>

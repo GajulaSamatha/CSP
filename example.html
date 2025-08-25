@@ -1,0 +1,356 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Service Details Form</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.2/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/lucide/0.263.1/lucide.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: #f8f9fa;
+            padding: 20px 0;
+        }
+        
+        .form-container {
+            max-width: 768px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+            padding: 2rem;
+        }
+        
+        .tag {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 4px 12px;
+            border-radius: 50px;
+            font-size: 0.875rem;
+            margin: 2px;
+        }
+        
+        .tag-blue {
+            background-color: #dbeafe;
+            color: #1e40af;
+        }
+        
+        .tag-green {
+            background-color: #dcfce7;
+            color: #166534;
+        }
+        
+        .tag button {
+            background: none;
+            border: none;
+            cursor: pointer;
+            padding: 0;
+            color: inherit;
+            opacity: 0.7;
+            transition: opacity 0.2s;
+        }
+        
+        .tag button:hover {
+            opacity: 1;
+        }
+        
+        .preview-section {
+            background-color: #f9fafb;
+            border-radius: 8px;
+            padding: 1rem;
+            margin-top: 1.5rem;
+        }
+        
+        .preview-label {
+            font-size: 0.75rem;
+            color: #6b7280;
+        }
+        
+        .preview-text {
+            font-size: 0.875rem;
+            color: #374151;
+        }
+        
+        .input-group button {
+            white-space: nowrap;
+        }
+        
+        .tags-container {
+            margin-top: 0.75rem;
+        }
+        
+        .help-text {
+            font-size: 0.75rem;
+            color: #6b7280;
+            margin-top: 0.25rem;
+        }
+        
+        .lucide {
+            width: 16px;
+            height: 16px;
+        }
+        
+        .icon-plus::before {
+            content: '+';
+            font-weight: bold;
+            font-size: 16px;
+        }
+        
+        .icon-x::before {
+            content: '×';
+            font-weight: bold;
+            font-size: 18px;
+            line-height: 1;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="form-container">
+            <h2 class="fw-bold text-dark mb-4">Service Details</h2>
+            
+            <form id="serviceForm">
+                <!-- Famous For Section -->
+                <div class="mb-4">
+                    <label class="form-label fw-semibold">
+                        What are you famous for? *
+                    </label>
+                    
+                    <div class="input-group mb-2">
+                        <input 
+                            type="text" 
+                            id="famousForInput"
+                            class="form-control" 
+                            placeholder="e.g., Best pizza in town, Quick delivery..."
+                        >
+                        <button 
+                            type="button" 
+                            id="addFamousForBtn"
+                            class="btn btn-primary d-flex align-items-center gap-1"
+                        >
+                            <span class="icon-plus"></span>
+                            Add
+                        </button>
+                    </div>
+                    
+                    <div id="famousForTags" class="tags-container"></div>
+                    <div class="help-text">Press Enter or click Add to create tags</div>
+                </div>
+                
+                <!-- Available Items Section -->
+                <div class="mb-4">
+                    <label class="form-label fw-semibold">
+                        What items/services do you offer? *
+                    </label>
+                    
+                    <div class="input-group mb-2">
+                        <input 
+                            type="text" 
+                            id="itemsInput"
+                            class="form-control" 
+                            placeholder="e.g., Margherita Pizza, Garlic Bread, Cold Drinks..."
+                        >
+                        <button 
+                            type="button" 
+                            id="addItemBtn"
+                            class="btn btn-success d-flex align-items-center gap-1"
+                        >
+                            <span class="icon-plus"></span>
+                            Add
+                        </button>
+                    </div>
+                    
+                    <div id="itemsTags" class="tags-container"></div>
+                    <div class="help-text">Press Enter or click Add to create tags</div>
+                </div>
+                
+                <!-- Submit Button -->
+                <div class="mb-4">
+                    <button 
+                        type="submit" 
+                        id="submitBtn"
+                        class="btn btn-dark w-100 py-3 fw-semibold"
+                        disabled
+                    >
+                        Save Service Details
+                    </button>
+                </div>
+                
+                <!-- Preview Section -->
+                <div id="previewSection" class="preview-section" style="display: none;">
+                    <h6 class="fw-semibold text-dark mb-2">Preview:</h6>
+                    <div id="famousForPreview" style="display: none;" class="mb-2">
+                        <span class="preview-label">Famous for: </span>
+                        <span class="preview-text" id="famousForText"></span>
+                    </div>
+                    <div id="itemsPreview" style="display: none;">
+                        <span class="preview-label">Available items: </span>
+                        <span class="preview-text" id="itemsText"></span>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.2/js/bootstrap.bundle.min.js"></script>
+    <script>
+        class ServiceDetailsForm {
+            constructor() {
+                this.famousFor = [];
+                this.availableItems = [];
+                this.initializeEventListeners();
+            }
+
+            initializeEventListeners() {
+                // Famous For input handlers
+                document.getElementById('famousForInput').addEventListener('keypress', (e) => {
+                    if (e.key === 'Enter') {
+                        e.preventDefault();
+                        this.addFamousFor();
+                    }
+                });
+                
+                document.getElementById('addFamousForBtn').addEventListener('click', () => {
+                    this.addFamousFor();
+                });
+
+                // Items input handlers
+                document.getElementById('itemsInput').addEventListener('keypress', (e) => {
+                    if (e.key === 'Enter') {
+                        e.preventDefault();
+                        this.addItem();
+                    }
+                });
+                
+                document.getElementById('addItemBtn').addEventListener('click', () => {
+                    this.addItem();
+                });
+
+                // Form submit handler
+                document.getElementById('serviceForm').addEventListener('submit', (e) => {
+                    this.handleSubmit(e);
+                });
+            }
+
+            addFamousFor() {
+                const input = document.getElementById('famousForInput');
+                const value = input.value.trim();
+                
+                if (value && !this.famousFor.includes(value)) {
+                    this.famousFor.push(value);
+                    input.value = '';
+                    this.renderFamousForTags();
+                    this.updateSubmitButton();
+                    this.updatePreview();
+                }
+            }
+
+            removeFamousFor(index) {
+                this.famousFor.splice(index, 1);
+                this.renderFamousForTags();
+                this.updateSubmitButton();
+                this.updatePreview();
+            }
+
+            addItem() {
+                const input = document.getElementById('itemsInput');
+                const value = input.value.trim();
+                
+                if (value && !this.availableItems.includes(value)) {
+                    this.availableItems.push(value);
+                    input.value = '';
+                    this.renderItemsTags();
+                    this.updateSubmitButton();
+                    this.updatePreview();
+                }
+            }
+
+            removeItem(index) {
+                this.availableItems.splice(index, 1);
+                this.renderItemsTags();
+                this.updateSubmitButton();
+                this.updatePreview();
+            }
+
+            renderFamousForTags() {
+                const container = document.getElementById('famousForTags');
+                container.innerHTML = '';
+                
+                if (this.famousFor.length > 0) {
+                    this.famousFor.forEach((item, index) => {
+                        const tag = document.createElement('span');
+                        tag.className = 'tag tag-blue';
+                        tag.innerHTML = `
+                            ${item}
+                            <button type="button" onclick="app.removeFamousFor(${index})" title="Remove">
+                                <span class="icon-x"></span>
+                            </button>
+                        `;
+                        container.appendChild(tag);
+                    });
+                }
+            }
+
+            renderItemsTags() {
+                const container = document.getElementById('itemsTags');
+                container.innerHTML = '';
+                
+                if (this.availableItems.length > 0) {
+                    this.availableItems.forEach((item, index) => {
+                        const tag = document.createElement('span');
+                        tag.className = 'tag tag-green';
+                        tag.innerHTML = `
+                            ${item}
+                            <button type="button" onclick="app.removeItem(${index})" title="Remove">
+                                <span class="icon-x"></span>
+                            </button>
+                        `;
+                        container.appendChild(tag);
+                    });
+                }
+            }
+
+            updateSubmitButton() {
+                const submitBtn = document.getElementById('submitBtn');
+                submitBtn.disabled = this.famousFor.length === 0 || this.availableItems.length === 0;
+            }
+
+            updatePreview() {
+                const previewSection = document.getElementById('previewSection');
+                const famousForPreview = document.getElementById('famousForPreview');
+                const itemsPreview = document.getElementById('itemsPreview');
+                
+                const showPreview = this.famousFor.length > 0 || this.availableItems.length > 0;
+                previewSection.style.display = showPreview ? 'block' : 'none';
+                
+                if (this.famousFor.length > 0) {
+                    famousForPreview.style.display = 'block';
+                    document.getElementById('famousForText').textContent = this.famousFor.join(', ');
+                } else {
+                    famousForPreview.style.display = 'none';
+                }
+                
+                if (this.availableItems.length > 0) {
+                    itemsPreview.style.display = 'block';
+                    document.getElementById('itemsText').textContent = this.availableItems.join(', ');
+                } else {
+                    itemsPreview.style.display = 'none';
+                }
+            }
+
+            handleSubmit(e) {
+                e.preventDefault();
+                console.log({
+                    famousFor: this.famousFor,
+                    availableItems: this.availableItems
+                });
+                alert('Data logged to console!');
+            }
+        }
+
+        // Initialize the app
+        const app = new ServiceDetailsForm();
+    </script>
+</body>
+</html>

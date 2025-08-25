@@ -1,5 +1,6 @@
 <?php
 session_start();
+// session_
 require_once 'db.php';
 
 // Check authentication
@@ -9,16 +10,19 @@ if (!isset($_SESSION['user_name'])) {
 }
 
 // Get service ID
-$service_id = $_GET['id'] ?? 0;
-
+if(!isset($_SESSION['service_id'])){
+    $_SESSION['service_id'] = $_GET['id'] ?? 13;
+}   
+echo($_SESSION['service_id']);
 // Verify the service belongs to this provider
 $stmt = $pdo->prepare("SELECT * FROM services WHERE id = ?");
-$stmt->execute([$service_id]);
+$stmt->execute([$_SESSION['service_id']]);
 $service = $stmt->fetch(PDO::FETCH_ASSOC);
 
 if (!$service) {
-    header("Location: provider_dashboard.php");
-    exit();
+    // header("Location: dash.php");
+    // exit();
+    echo($service);
 }
 
 // Handle form submission
@@ -46,6 +50,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         lon = ? 
         WHERE id = ?
     ");
+
+    $stmt1 = $pdo->prepare("
+        UPDATE providers SET 
+        business_name = ?, 
+        category = ?, 
+        description = ?, 
+        phone_number = ?, 
+        whatsapp_number = ?, 
+        location = ?, 
+        lat = ?, 
+        lon = ? 
+        WHERE id = ?
+    ");
     
     $success = $stmt->execute([
         $business_name,
@@ -56,12 +73,24 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $address,
         $lat,
         $lon,
-        $service_id
+        $_SESSION['service_id']
+    ]);
+
+    $stmt1->execute([
+        $business_name,
+        $category,
+        $about,
+        $telephone,
+        $whatsapp,
+        $address,
+        $lat,
+        $lon,
+        $_SESSION['service_id']
     ]);
 
     if ($success) {
         $_SESSION['success_message'] = "Service updated successfully!";
-        header("Location: provider_dashboard.php");
+        header("Location: edit_service.php?id=".$_SESSION['service_id']);
         exit();
     } else {
         $error = "Failed to update service. Please try again.";
@@ -79,6 +108,11 @@ $categories = $pdo->query("SELECT DISTINCT service FROM services WHERE service I
     <title>Edit Service</title>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <link rel="stylesheet" href="./provider.css">
+    <style>
+        select option{
+            text-transform:uppercase;
+        }
+    </style>
 </head>
 <body>
     <?php include 'new_header.php'; ?>
@@ -90,7 +124,7 @@ $categories = $pdo->query("SELECT DISTINCT service FROM services WHERE service I
             <div class="alert error"><?= htmlspecialchars($error) ?></div>
         <?php endif; ?>
         
-        <form method="POST" class="service-form">
+        <form method="POST" class="service-form" action="edit_service.php">
             <div class="form-group">
                 <label for="business_name">Business Name*</label>
                 <input type="text" id="business_name" name="business_name" 
@@ -103,7 +137,7 @@ $categories = $pdo->query("SELECT DISTINCT service FROM services WHERE service I
                     <option value="">Select a category</option>
                     <?php foreach ($categories as $cat): ?>
                         <option value="<?= htmlspecialchars($cat) ?>" 
-                            <?= $cat === $service['category'] ? 'selected' : '' ?>>
+                            <?= $cat === $service['service'] ? 'selected' : '' ?>>
                             <?= htmlspecialchars($cat) ?>
                         </option>
                     <?php endforeach; ?>
@@ -158,6 +192,8 @@ $categories = $pdo->query("SELECT DISTINCT service FROM services WHERE service I
             // In a real app, you would call a geocoding API here
             console.log('Address changed - would geocode here');
         });
+
+        
     </script>
 </body>
 </html>

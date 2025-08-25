@@ -24,37 +24,37 @@ if(isset($_POST['register-prov'])){
     $lon = $_POST['lon'];
     $loc = $_POST['location'];
     $category = ($_POST['category'] === 'Other') ? $_POST['other_category'] : $_POST['category'];
-      if($_POST['category'] === 'Other') {
-    // First check if category exists
-          $checkStmt = $conn->prepare("SELECT id FROM categories WHERE name = ?");
-          $checkStmt->bind_param("s", $category);
-          $checkStmt->execute();
-          $checkStmt->store_result(); // Store the result set
+  //   if($_POST['category'] === 'Other') {
+  //   // First check if category exists
+  //         $checkStmt = $conn->prepare("SELECT id FROM categories WHERE name = ?");
+  //         $checkStmt->bind_param("s", $category);
+  //         $checkStmt->execute();
+  //         $checkStmt->store_result(); // Store the result set
           
-          if ($checkStmt->num_rows > 0) {
-              // Category exists - increment count
-              $updateStmt = $conn->prepare(
-                  "UPDATE categories SET category_count = category_count + 1 
-                  WHERE name = ?"
-              );
-              $updateStmt->bind_param("s", $category);
-              $updateStmt->execute();
-              $updateStmt->close();
-              $checkStmt->close();
+  //         if ($checkStmt->num_rows > 0) {
+  //             // Category exists - increment count
+  //             $updateStmt = $conn->prepare(
+  //                 "UPDATE categories SET category_count = category_count + 1 
+  //                 WHERE name = ?"
+  //             );
+  //             $updateStmt->bind_param("s", $category);
+  //             $updateStmt->execute();
+  //             $updateStmt->close();
+  //             $checkStmt->close();
               
-          } else {
-              // New category - insert with count 1
-              $insertStmt = $conn->prepare(
-                  "INSERT INTO categories (name, description, category_count) 
-                  VALUES (?, ?, 1)"
-              );
-              $insertStmt->bind_param("ss", $category, $desc);
-              $insertStmt->execute();
-              $insertStmt->close();
-              $checkStmt->close();
+  //         } else {
+  //             // New category - insert with count 1
+  //             $insertStmt = $conn->prepare(
+  //                 "INSERT INTO categories (name, description, category_count) 
+  //                 VALUES (?, ?, 1)"
+  //             );
+  //             $insertStmt->bind_param("ss", $category, $desc);
+  //             $insertStmt->execute();
+  //             $insertStmt->close();
+  //             $checkStmt->close();
               
-          }
-  }
+  //         }
+  // }
 
       // ✅ Handle multiple image uploads
     $uploadedFiles = [];
@@ -93,10 +93,11 @@ if(isset($_POST['register-prov'])){
         $stmt_admin->execute();
 
         $_SESSION['user_name']=$first." ".$last;
+        
         $stmt->close();
         $stmt_admin->close();
         $conn->close();
-        header("Location: index.php");
+        header("Location: new_provider_login.php");
         exit();
     } else {
         echo "<script>alert('Error: " . $stmt->error . "');</script>";
@@ -321,7 +322,7 @@ if(isset($_POST['register-prov'])){
 
     <fieldset>
       <legend>Location</legend>
-      <input type="text" name="location" id="location" placeholder="Location (Auto-filled)" readonly>
+      <input type="text" name="location" id="location" placeholder="Location " >
       <input type="hidden" name="lat" id="lat">
       <input type="hidden" name="lon" id="lon">
     </fieldset>

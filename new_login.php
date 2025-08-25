@@ -8,32 +8,59 @@ if ($conn->connect_error) {
 }
 
 if(isset($_POST['login'])){
-    $email = $_POST['email'];
-    $password = $_POST['password'];
+    $email = $conn->real_escape_string($_POST['email']);
+    $password = $_POST['password']; // Don't escape passwords - it can corrupt them
 
-    // Prepare query
-    $sql = "SELECT first_name, last_name, password FROM customers WHERE email=?";
+    // Prepare query to get customer data
+    $sql = "SELECT id, first_name, last_name, password FROM customers WHERE email=?";
     $stmt = $conn->prepare($sql);
+    
+    if (!$stmt) {
+        die("Prepare failed: " . $conn->error);
+    }
+    
     $stmt->bind_param("s", $email);
     $stmt->execute();
     $result = $stmt->get_result();
 
     if ($result->num_rows === 1) {
         $row = $result->fetch_assoc();
-
-        if ($password === $row['password']) {
-            $_SESSION['user_name'] = $row['first_name']." ".$row['last_name'];
+        
+        // SECURE PASSWORD VERIFICATION
+        if ($password=== $row['password']) {
+            // Password is correct!
+            
+            // Check if password needs rehashing (if algorithm/cost changed)
+            // if (password_needs_rehash($row['password'], PASSWORD_DEFAULT)) {
+            //     $newHash = password_hash($password, PASSWORD_DEFAULT);
+            //     // Update the database with new hash
+            //     $updateSql = "UPDATE customers SET password=? WHERE id=?";
+            //     $updateStmt = $conn->prepare($updateSql);
+            //     $updateStmt->bind_param("si", $newHash, $row['id']);
+            //     $updateStmt->execute();
+            // }
+            
+            // Set session variables
             $_SESSION['user_id'] = $row['id'];
+            $_SESSION['user_name'] = $row['first_name']." ".$row['last_name'];
+            $_SESSION['user_type'] = 'customer';
+            $_SESSION['logged_in'] = true;
+            
+            // Redirect to index
             header("Location: index.php");
             exit();
         } else {
-            ?><script>alert("Password is incorrect");</script><?php
+            $error = "Invalid email or password"; // Generic message for security
         }
     } else {
-        ?><script>alert("Invalid email or password.");</script><?php
+        $error = "Invalid email or password"; // Same message to prevent user enumeration
     }
-
-    header("Location: new_login.php");
+    
+    $stmt->close();
+    $conn->close();
+    
+    // If we got here, login failed
+    header("Location: new_login.php?error=".urlencode($error));
     exit();
 }
 ?>
@@ -131,6 +158,16 @@ if(isset($_POST['login'])){
             text-decoration: underline;
         }
 
+        /* Error Message */
+        .error-message {
+            color: #d32f2f;
+            background-color: #fde8e8;
+            padding: 10px;
+            border-radius: 5px;
+            margin-bottom: 15px;
+            font-size: 14px;
+        }
+
         /* Animation */
         @keyframes fadeIn {
             from { opacity: 0; transform: translateY(10px); }
@@ -156,12 +193,16 @@ if(isset($_POST['login'])){
         <h2>Customer Login</h2>
         <div class="subtitle">Welcome back! Please log in to continue.</div>
         
+        <?php if(isset($_GET['error'])): ?>
+            <div class="error-message"><?php echo htmlspecialchars($_GET['error']); ?></div>
+        <?php endif; ?>
+        
         <input type="email" name="email" placeholder="Enter your Email" required>
         <input type="password" name="password" placeholder="Enter your Password" required>
         <input type="submit" name="login" value="Log In">
         
-        <p><a href="new_register_cust.php">Don’t have an account? Register</a></p>
-        <p><a href="new_provider_login.php">Login as Provider</a></p>
+        <p><a href="new_register_cust.php">Don't have an account? Register</a></p>
+        <p><a href="new_provider_login.php">Login as Service Provider</a></p>
     </form>
 </body>
 </html>

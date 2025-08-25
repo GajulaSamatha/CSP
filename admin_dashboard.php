@@ -117,6 +117,8 @@
     <a href="admin.php">Grant Service</a>
     <a href="upload.php">Bulk Upload Services</a>
     <a href="admin_delete.php">Delete Services</a>
+    <a href="admin_contact_msg.php">User Messages</a>
+    <a href="admin_logout.php" class="logout-btn">Logout</a>
 </div>
 
 <div class="container">

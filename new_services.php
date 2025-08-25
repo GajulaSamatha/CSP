@@ -1,8 +1,10 @@
 <?php
-// db.php - make sure to configure your DB connection
+// db.php - Database connection
 $conn = new mysqli("localhost", "root", "1234", "nandyal_dial");
 if ($conn->connect_error) die("Connection failed");
 session_start();
+date_default_timezone_set("Asia/Kolkata");
+
 
 function haversineGreatCircleDistance($lat1, $lon1, $lat2, $lon2) {
     $earthRadius = 6371; // km
@@ -19,10 +21,17 @@ function haversineGreatCircleDistance($lat1, $lon1, $lat2, $lon2) {
     return $earthRadius * $angle;
 }
 
+
+
+
+
 $businessName = $_GET['business_name'] ?? '';
+$wrongName = $_GET['wrong_name'] ?? '';
 $category = $_GET['category'] ?? '';
 $userLat = $_GET['lat'] ?? '';
 $userLon = $_GET['lon'] ?? '';
+
+
 
 // Get all categories for the filter dropdown
 $categories = [];
@@ -30,33 +39,130 @@ $catResult = $conn->query("SELECT DISTINCT service FROM services WHERE service I
 while ($row = $catResult->fetch_assoc()) {
     $categories[] = $row['service'];
 }
+// User input (with typo, e.g. "restarant")
+if(!empty($wrongName)){
+    $input = strtolower($wrongName); // you can replace with $_GET['q'] or $_POST['q']
 
-// Build the main query
-$sql = "SELECT * FROM services WHERE 1=1";
-$params = [];
-$types = '';
+$closest = null;
+$shortest = -1;
+$categ=$categories;
+foreach ($categ as $c) {
+    // Calculate Levenshtein distance
+    $distance = levenshtein($input, strtolower($c));
 
+    // Check for exact match first
+    if ($distance == 0) {
+        $closest = $c;
+        $shortest = 0;
+        break;
+    }
+
+    // If this distance is less than the shortest distance found so far
+    if ($distance < $shortest || $shortest < 0) {
+        $closest = $c;
+        $shortest = $distance;
+    }
+}
+
+if ((!$shortest == 0)) {
+    $category=$closest;
+}
+}
+
+$sql1="SELECT * FROM services WHERE 1=1";
+$params1 = [];
+$types1= '';
 if (!empty($businessName)) {
-    $sql .= " AND bussiness_name LIKE ?";
-    $params[] = "%" . $businessName . "%";
-    $types .= "s";
+    $sql1 .= " AND bussiness_name LIKE ?";
+    $params1[] = "%" . $businessName . "%";
+    $types1 .= "s";
 }
 
 if (!empty($category)) {
-    $sql .= " AND service = ?";
-    $params[] = $category;
-    $types .= "s";
+    $sql1 .= " AND service = ?";
+    $params1[] = $category;
+    $types1 .= "s";
+}
+
+// Add sorting by distance if location is provided
+// if ($userLat && $userLon) {
+//     $sql1 .= " ORDER BY (6371 * acos(cos(radians(?)) * cos(radians(lat)) * cos(radians(lon) - radians(?) + sin(radians(?)) * sin(radians(lat))))";
+//     $params1[] = $userLat;
+//     $params1[] = $userLon;
+//     $params1[] = $userLat;
+//     $types1 .= "ddd";
+// }
+
+
+
+
+// ✅ Fetch all services
+
+
+// ✅ Functions
+function buildServiceHours($service) {
+    return [    
+        "mon" => [$service["mon_fri_start"], $service["mon_fri_end"]],
+        "tue" => [$service["mon_fri_start"], $service["mon_fri_end"]],
+        "wed" => [$service["mon_fri_start"], $service["mon_fri_end"]],
+        "thu" => [$service["mon_fri_start"], $service["mon_fri_end"]],
+        "fri" => [$service["mon_fri_start"], $service["mon_fri_end"]],
+        "sat" => [$service["sat_start"], $service["sat_end"]],
+        "sun" => [$service["sun_start"], $service["sun_end"]]
+    ];
+}
+
+function getServiceStatus($hours) {
+    $day = strtolower(date("D")); // e.g. "mon"
+    $now = new DateTime();
+
+    list($startTime, $endTime) = $hours[$day];
+
+    // If closed all day (00:00–00:00)
+    if ($startTime === "00:00:00" && $endTime === "00:00:00") {
+        return findNextOpen($now, $hours);
+    }
+
+    $start = new DateTime(date("Y-m-d") . " " . $startTime);
+    $end   = new DateTime(date("Y-m-d") . " " . $endTime);
+
+    if ($now >= $start && $now <= $end) {
+        $remaining = $now->diff($end);
+        return "Open now (closes in {$remaining->h}h {$remaining->i}m)";
+    } elseif ($now < $start) {
+        $wait = $now->diff($start);
+        return "Closed, opens in {$wait->h}h {$wait->i}m";
+    } else {
+        return findNextOpen($now, $hours);
+    }
+}
+
+function findNextOpen($now, $hours) {
+    $nextDay = clone $now;
+    for ($i = 1; $i <= 7; $i++) {
+        $nextDay->modify("+1 day");
+        $nextDayKey = strtolower($nextDay->format("D"));
+
+        list($s, $e) = $hours[$nextDayKey];
+        if (!($s === "00:00:00" && $e === "00:00:00")) {
+            $nextOpen = new DateTime($nextDay->format("Y-m-d") . " " . $s);
+            $wait = $now->diff($nextOpen);
+            return "Closed, opens in {$wait->d}d {$wait->h}h {$wait->i}m";
+        }
+    }
+    return "Closed (no schedule)";
 }
 
 // Prepare and execute the query
-$stmt = $conn->prepare($sql);
-if (!empty($params)) {
-    $stmt->bind_param($types, ...$params);
+$stmt = $conn->prepare($sql1);
+if (!empty($params1)) {
+    $stmt->bind_param($types1, ...$params1);
 }
 $stmt->execute();
 $result = $stmt->get_result();
 
 $services = [];
+$row=[];
 while ($row = $result->fetch_assoc()) {
     $ratingStmt = $conn->prepare("
         SELECT AVG(rating) as avg_rating, COUNT(*) as review_count 
@@ -67,6 +173,17 @@ while ($row = $result->fetch_assoc()) {
     $ratingStmt->execute();
     $ratingResult = $ratingStmt->get_result();
     $ratingData = $ratingResult->fetch_assoc();
+
+    $sql = $conn->prepare("SELECT mon_fri_start,mon_fri_end,sat_start,sat_end,sun_start,sun_end FROM providers where status='approved' AND id=?");
+    $sql->bind_param("i", $row['id']);
+    $sql->execute();
+    $result3 = $sql->get_result();
+    $result3 = $result3->fetch_assoc();
+
+        // while ($service = $result3->fetch_assoc()) {
+            $hours = buildServiceHours($result3);
+            $row['status_time'] = getServiceStatus($hours); 
+        // }
     
     // Round to nearest 0.5
     $rawRating = (float)$ratingData['avg_rating'];
@@ -82,14 +199,25 @@ while ($row = $result->fetch_assoc()) {
         $row['distance'] = null;
     }
     $services[] = $row;
+
+
+
+
+// ✅ Display Service Cards
+
 }
 
 
 
+
+$wrongName='';
+
+$conn->close();
 
 if ($userLat && $userLon) {
     usort($services, fn($a, $b) => $a['distance'] <=> $b['distance']);
 }
+// print_r($services);
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -97,18 +225,338 @@ if ($userLat && $userLon) {
     <meta charset="UTF-8">
     <title>Find Services Nearby</title>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="./test_s.css">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600&family=Playfair+Display:wght@400;500;600&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #8e44ad;
+            --secondary: #6c3483;
+            --accent: #e67e22;
+            --light: #f9f9f9;
+            --dark: #2c3e50;
+            --text: #333333;
+            --border: #e0e0e0;
+            --shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+            --transition: all 0.3s ease;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        select option{
+            text-transform: uppercase;
+        }
+
+        body {
+            font-family: 'Poppins', sans-serif;
+            background-color: var(--light);
+            color: var(--text);
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 2rem auto;
+            padding: 0 1.5rem;
+        }
+
+        h1, h2, h3 {
+            font-family: 'Playfair Display', serif;
+            color: var(--dark);
+        }
+        
+        article h1 {
+            text-align: center;
+            margin: 2rem 0;
+            font-size: 2.5rem;
+            color: var(--primary);
+            position: relative;
+            padding-bottom: 1rem;
+        }
+
+        article h1::after {
+           
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 100px;
+            height: 3px;
+            background: var(--accent);
+        }
+
+        #searchForm {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 1rem;
+            margin-bottom: 2rem;
+            background: white;
+            padding: 1.5rem;
+            border-radius: 8px;
+            box-shadow: var(--shadow);
+        }
+
+        #searchForm input,
+        #searchForm select {
+            flex: 1;
+            min-width: 200px;
+            padding: 0.8rem 1.2rem;
+            border: 1px solid var(--border);
+            border-radius: 4px;
+            font-size: 1rem;
+            transition: var(--transition);
+        }
+
+        #searchForm input:focus,
+        #searchForm select:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 2px rgba(142, 68, 173, 0.2);
+        }
+
+        #searchForm button {
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 0.8rem 1.5rem;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 1rem;
+            transition: var(--transition);
+        }
+
+        #searchForm button:hover {
+            background: var(--secondary);
+        }
+
+        .service-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .service-card {
+            background: white;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: var(--shadow);
+            transition: var(--transition);
+            position: relative;
+        }
+
+        .service-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.12);
+        }
+
+        .service-badge {
+            position: absolute;
+            top: 1rem;
+            right: 1rem;
+            background: var(--accent);
+            color: white;
+            padding: 0.3rem 0.8rem;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 500;
+            z-index: 1;
+        }
+
+        .service-image {
+            height: 180px;
+            overflow: hidden;
+        }
+
+        .service-image img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            transition: var(--transition);
+        }
+
+        .service-card:hover .service-image img {
+            transform: scale(1.05);
+        }
+
+        .service-info {
+            padding: 1.5rem;
+        }
+
+        .service-info h3 {
+            font-size: 1.2rem;
+            margin-bottom: 0.5rem;
+            color: var(--primary);
+        }
+
+        .service-category {
+            color: var(--secondary);
+            font-size: 0.9rem;
+            margin-bottom: 0.8rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .service-category::before {
+            content: '\f02b';
+            font-family: 'Font Awesome 6 Free';
+            font-weight: 900;
+            font-size: 0.8rem;
+        }
+
+        .service-rating {
+            display: flex;
+            align-items: center;
+            gap: 0.3rem;
+            margin-bottom: 0.8rem;
+        }
+
+        .service-rating i.active {
+            color: #f1c40f;
+        }
+
+        .service-rating span {
+            font-size: 0.8rem;
+            color: var(--text);
+            margin-left: 0.3rem;
+        }
+
+        .service-description {
+            font-size: 0.9rem;
+            color: var(--text);
+            margin-bottom: 1rem;
+            display: -webkit-box;
+            -webkit-line-clamp: 3;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+
+        .service-distance {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 0.9rem;
+            color: var(--secondary);
+            margin-bottom: 1rem;
+        }
+
+        .service-links {
+            display: flex;
+            gap: 0.8rem;
+            flex-wrap: wrap;
+        }
+
+        .service-links a {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.3rem;
+            padding: 0.5rem 0.8rem;
+            background: var(--light);
+            color: var(--primary);
+            border-radius: 4px;
+            text-decoration: none;
+            font-size: 0.8rem;
+            transition: var(--transition);
+        }
+
+        .service-links a:hover {
+            background: var(--primary);
+            color: white;
+        }
+
+        .pagination {
+            display: flex;
+            justify-content: center;
+            margin: 2rem 0;
+            gap: 0.5rem;
+        }
+
+        .pagination a, 
+        .pagination span {
+            display: inline-block;
+            padding: 0.5rem 1rem;
+            border-radius: 4px;
+            text-decoration: none;
+        }
+
+        .pagination a {
+            background: white;
+            color: var(--primary);
+            border: 1px solid var(--border);
+            transition: var(--transition);
+        }
+
+        .pagination a:hover {
+            background: var(--primary);
+            color: white;
+            border-color: var(--primary);
+        }
+
+        .pagination .current {
+            background: var(--primary);
+            color: white;
+            border: 1px solid var(--primary);
+        }
+
+        .load-more {
+            text-align: center;
+            margin: 2rem 0;
+        }
+
+        .load-more button {
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 0.8rem 1.5rem;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 1rem;
+            transition: var(--transition);
+        }
+
+        .load-more button:hover {
+            background: var(--secondary);
+        }
+
+        @media (max-width: 768px) {
+            .service-grid {
+                grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+            }
+
+            article h1 {
+                font-size: 2rem;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .service-grid {
+                grid-template-columns: 1fr;
+            }
+
+            #searchForm {
+                flex-direction: column;
+            }
+
+            article h1 {
+                font-size: 1.8rem;
+            }
+        }
+    </style>
 </head>
 
 <body>
     <?php include "new_header.php"; ?>
     <article>
-        <h1>🌟 LocalConnect Services 🌟</h1>
+        <h1 >LocalConnect Services</h1>
     </article>
 
     <div class="container">
-        <form id="searchForm" action="new_services.php">
+        <form id="searchForm" action="new_services.php" method="get">
             <input type="text" name="business_name" placeholder="Search by Business Name" value="<?= htmlspecialchars($businessName) ?>">
+            <input type="text" name="wrong_name" placeholder="Search if spell not known" value="<?= htmlspecialchars($wrongName) ?>">
             
             <select name="category">
                 <option value="">All Categories</option>
@@ -135,34 +583,31 @@ if ($userLat && $userLon) {
                         <?php
                         $images = json_decode($service['image_names'], true);
                         if (!empty($images) && is_array($images)) {
-                            echo '<img src="uploads/' . htmlspecialchars($images[0]) . '" alt="Service Image">';
+                            echo '<img src="uploads/' . htmlspecialchars($images[0]) . '" alt="' . htmlspecialchars($service['bussiness_name']) . '">';
                         } else {
-                            echo '<img src="default.jpg" alt="No Image">';
+                            echo '<img src="default.jpg" alt="No Image Available">';
                         }
                         ?>
                     </div>
 
                     <div class="service-info">
-                        <h3>Service Name : <?= htmlspecialchars($service['bussiness_name']) ?></h3>
-                        <p class="service-category">Category :<?= htmlspecialchars($service['service']) ?></p>
+                        <h3><?= htmlspecialchars($service['bussiness_name']) ?></h3>
+                        <p class="service-category"><?= htmlspecialchars($service['service']) ?></p>
                         
-                        <div class="service-rating">Ratings :
+                        <div class="service-rating">
                             <?php 
                             $fullStars = floor($service['rating']);
                             $halfStar = ($service['rating'] - $fullStars) >= 0.5;
                             $emptyStars = 5 - $fullStars - ($halfStar ? 1 : 0);
                             
-                            // Full stars
                             for ($i = 0; $i < $fullStars; $i++): ?>
                                 <i class="fas fa-star active"></i>
                             <?php endfor; ?>
                             
-                            <!-- Half star if needed -->
                             <?php if ($halfStar): ?>
                                 <i class="fas fa-star-half-alt active"></i>
                             <?php endif; ?>
                             
-                            <!-- Empty stars -->
                             <?php for ($i = 0; $i < $emptyStars; $i++): ?>
                                 <i class="far fa-star"></i>
                             <?php endfor; ?>
@@ -171,7 +616,7 @@ if ($userLat && $userLon) {
                         </div>
 
                         <p class="service-description">
-                           About: <?= htmlspecialchars($service['about']) ?>
+                            <?= htmlspecialchars($service['about']) ?>
                         </p>
 
                         <?php if (!empty($service['distance'])): ?>
@@ -194,49 +639,44 @@ if ($userLat && $userLon) {
                             </a>
                         </div>
                     </div>
+                    <h4 style="margin-top:40px;background:black;color:white;padding:10px 20px;"><?= htmlspecialchars($service['status_time']) ?></h4>
                 </div>
             <?php endforeach; ?>
         </div>
     </div>
     <div id="include-footer"></div>
 
-  <script>
-async function includeHTML(id, file) {
-  try {
-    const res = await fetch(file);
-    const data = await res.text();
-    document.getElementById(id).innerHTML = data;
-  } catch (error) {
-    console.error(`Failed to load ${file}:`, error);
-  }
-}
+    <script>
+    async function includeHTML(id, file) {
+        try {
+            const res = await fetch(file);
+            const data = await res.text();
+            document.getElementById(id).innerHTML = data;
+        } catch (error) {
+            console.error(`Failed to load ${file}:`, error);
+        }
+    }
 
-// Combine everything in one window.onload
-window.onload = async () => {
-  // Load footer
-  await includeHTML("include-footer", "footer.html");
+    window.onload = async () => {
+        // Load footer
+        await includeHTML("include-footer", "footer.html");
 
-  // Geolocation
-  if ("geolocation" in navigator) {
-    navigator.geolocation.getCurrentPosition(
-      (position) => {
-        document.getElementById("lat").value = position.coords.latitude;
-        document.getElementById("lon").value = position.coords.longitude;
-      },
-      () => {
-        console.warn("Location access denied");
-      },
-      { timeout: 10000, enableHighAccuracy: true, maximumAge: 30000 }
-    );
-  } else {
-    alert("Geolocation not available");
-  }
-
-  // Any other setup functions
-  if (typeof setupLocationDetection === "function") setupLocationDetection();
-  if (typeof setupHeaderBehavior === "function") setupHeaderBehavior();
-  if (typeof setupMap === "function") setupMap();
-};
-</script>
-    </body>
+        // Geolocation
+        if ("geolocation" in navigator) {
+            navigator.geolocation.getCurrentPosition(
+                (position) => {
+                    document.getElementById("lat").value = position.coords.latitude;
+                    document.getElementById("lon").value = position.coords.longitude;
+                },
+                () => {
+                    console.warn("Location access denied");
+                },
+                { timeout: 10000, enableHighAccuracy: true, maximumAge: 30000 }
+            );
+        } else {
+            alert("Geolocation not available");
+        }
+    };
+    </script>
+</body>
 </html>

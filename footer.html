@@ -7,82 +7,100 @@
 </head>
 <style>
     /* Footer */
-footer {
-    background: #1a202c;
-    color: white;
-    padding: 60px 0 20px;
-}
+    footer {
+        background: linear-gradient(135deg, #4A00E0, #8E2DE2); /* Same as header */
+        color: white;
+        padding: 60px 0 20px;
+    }
 
-.footer-content {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-    gap: 40px;
-    margin-bottom: 40px;
-}
+    .footer-content {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 40px;
+        margin-bottom: 40px;
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 0 20px;
+    }
 
-.footer-section h3 {
-    margin-bottom: 20px;
-    color: #667eea;
-    font-size: 18px;
-    font-weight: 700;
-}
+    .footer-section h3 {
+        margin-bottom: 20px;
+        color: #ffffff; /* Changed to white */
+        font-size: 18px;
+        font-weight: 700;
+    }
 
-.footer-section p {
-    color: #a0aec0;
-    line-height: 1.6;
-    margin-bottom: 16px;
-}
+    .footer-section p {
+        color: rgba(255, 255, 255, 0.8); /* Lighter white */
+        line-height: 1.6;
+        margin-bottom: 16px;
+        margin-left: 10px; /* Added margin-left */
+    }
 
-.footer-section a {
-    display: block;
-    color: #cbd5e0;
-    text-decoration: none;
-    margin-bottom: 12px;
-    transition: all 0.3s ease;
-    font-size: 15px;
-}
+    .footer-section a {
+        display: block;
+        color: rgba(255, 255, 255, 0.8); /* Lighter white */
+        text-decoration: none;
+        margin-bottom: 12px;
+        transition: all 0.3s ease;
+        font-size: 15px;
+        margin-left: 10px; /* Added margin-left */
+    }
 
-.footer-section a:hover {
-    color: #667eea;
-    transform: translateX(4px);
-}
+    .footer-section a:hover {
+        color: #ffffff; /* Pure white on hover */
+        transform: translateX(4px);
+    }
 
-.footer-bottom {
-    text-align: center;
-    padding-top: 32px;
-    border-top: 1px solid #2d3748;
-    color: #718096;
-    font-size: 14px;
-}
+    .footer-bottom {
+        text-align: center;
+        padding-top: 32px;
+        border-top: 1px solid rgba(255, 255, 255, 0.1); /* Lighter border */
+        color: rgba(255, 255, 255, 0.7); /* Lighter text */
+        font-size: 14px;
+        max-width: 1200px;
+        margin: 0 auto;
+    }
+
+    @media (max-width: 768px) {
+        .footer-content {
+            grid-template-columns: 1fr;
+            gap: 30px;
+        }
+        
+        .footer-section {
+            text-align: center;
+        }
+        
+        .footer-section p,
+        .footer-section a {
+            margin-left: 0; /* Remove margin on mobile */
+        }
+    }
 </style>
 <body>
-        <footer>
-      <div class="footer-content container">
-        <div class="footer-section">
-          <h3>LocalConnect</h3>
-          <p>Your trusted local service directory.</p>
+    <footer>
+        <div class="footer-content">
+            <div class="footer-section">
+                <h3>LocalConnect</h3>
+                <p>Your trusted local service directory.</p>
+            </div>
+            <div class="footer-section">
+                <h3>For Customers</h3>
+                <a href="new_services.php">Browse Services</a>
+                <a href="about.php">How It Works</a>
+                <a href="contact.php">Support</a>
+            </div>
+            <div class="footer-section">
+                <h3>For Providers</h3>
+                <a href="new_register_prov.php">Join as Provider</a>
+                <a href="new_provider_login.php">Provider Login</a>
+                <a href="contact.php">Help Center</a>
+            </div>
         </div>
-        <div class="footer-section">
-          <h3>For Customers</h3>
-          <a href="new_services.php">Browse Services</a>
-          <a href="about.php">How It Works</a>
-          <a href="contact.php">Support</a>
+        <div class="footer-bottom">
+            &copy; 2025 LocalConnect. All rights reserved.
         </div>
-        <div class="footer-section">
-          <h3>For Providers</h3>
-          <a href="new_register_prov.php">Join as Provider</a>
-          <a href="new_provider_login.php">Provider Login</a>
-          <a href="contact.php">Help Center</a>
-        </div>
-        <!-- <div class="footer-section">
-          <h3>Legal</h3>
-          <a href="#">Terms of Service</a>
-          <a href="#">Privacy Policy</a>
-        </div> -->
-      </div>
-      <div class="footer-bottom">
-        &copy; 2025 LocalConnect. All rights reserved.
-      </div>
     </footer>
 </body>
 </html>

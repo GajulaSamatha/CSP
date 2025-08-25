@@ -10,12 +10,13 @@ if (!isset($_SESSION['user_name'])) {
 
 // Get provider's services
 
-$name_parts = explode(" ", $_SESSION['user_name']);
+// $name_parts = explode(" ", $_SESSION['user_name']);
 
-$first_name = $name_parts[0];
-$last_name = $name_parts[1] ?? ''; // Using null coalescing in case there's no last name
-$stmt = $pdo->prepare("SELECT email FROM providers WHERE first_name=? AND last_name=?");
-$stmt->execute([$first_name,$last_name]);
+// $first_name = $name_parts[0];
+// $last_name = $name_parts[1] ?? ''; // Using null coalescing in case there's no last name
+
+$stmt = $pdo->prepare("SELECT email FROM providers WHERE id=?");
+$stmt->execute([$_SESSION['user_id']]);
 $provider_email = $stmt->fetchAll(PDO::FETCH_ASSOC);
 $services='';
 foreach ($provider_email as $s){
@@ -56,8 +57,7 @@ $services = $stmt2->fetchAll(PDO::FETCH_ASSOC);
                                 <a href="edit_service.php?id=<?= $service['id'] ?>" class="edit-btn">
                                     <i class="fas fa-edit"></i> Edit
                                 </a>
-                                <a href="delete_service.php?id=<?= $service['id'] ?>" class="delete-btn" 
-                                   onclick="return confirm('Are you sure you want to delete this service?')">
+                                <a href="delete_service.php?id=<?= $service['id'] ?>" class="delete-btn" >
                                     <i class="fas fa-trash"></i> Delete
                                 </a>
                             </div>

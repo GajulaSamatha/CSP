@@ -5,8 +5,12 @@ session_start();
 //     header('Location: admin_login.php');
 //     exit();
 // }
-
-// require_once 'db_connection.php';
+// 9494626126
+// 7947110938
+// S Venkappa Ayurvedic Store
+// 15.4903034,78.4856139
+// 1/119a, Opposite Ansar Jeweller's, Nandyal Urban, Main Bazaar, Nandyal Ho-518501
+// require_once 'db.php';
 
 $conn = new mysqli("localhost", "root", "1234", "nandyal_dial");
 if ($conn->connect_error) {
@@ -14,25 +18,71 @@ if ($conn->connect_error) {
 }
 
 // Handle delete
-if (isset($_POST['delete_id'])) {
-    $delete_id = intval($_POST['delete_id']);
+if (isset($_POST['delete_service'])) {
+    $delete_id = $_POST['delete_id'];
     
-    // First delete the image if exists
-    // $stmt = $conn->prepare("SELECT image_path FROM services WHERE id = ?");
-    // $stmt->bind_param("i", $delete_id);
-    // $stmt->execute();
-    // $result = $stmt->get_result();
-    // $service = $result->fetch_assoc();
+   // First delete the image if exists
+    $image_paths = [];
+            $stmt = $conn->prepare("SELECT image_names,service FROM services WHERE id = ?");
+            $stmt->bind_param("i", $delete_id);
+            $stmt->execute();
+            $result = $stmt->get_result();
+            $category_name;
+            if ($result->num_rows > 0) {
+                $service = $result->fetch_assoc();
+                $category_name=$service['service'];
+                if (!empty($service['image_names'])) {
+                    $image_data = json_decode($service['image_names'], true);
+                    if (is_array($image_data)) {
+                        foreach ($image_data as $image_name) {
+                            $image_path = "./uploads/" . $image_name;
+                            if (file_exists($image_path)) {
+                                $image_paths[] = $image_path;
+                            }
+                        }
+                    }
+                }
+     foreach ($image_paths as $image_path) {
+                if (file_exists($image_path)) {
+                    unlink($image_path);
+                }
+            }
+            $stmt4 = $conn->prepare("SELECT category_count FROM categories WHERE name = ?");
+                $stmt4->bind_param("s", $category_name);
+                $stmt4->execute();
+                $result = $stmt4->get_result();
     
-    // if ($service && !empty($service['image_path'])) {
-    //     unlink($service['image_path']);
-    // }
+            if ($result->num_rows > 0) {
+                $category = $result->fetch_assoc();
+                $category_count = $category['category_count'];
+                
+                if ($category_count == 1) {
+                    // Delete the category if count is 0
+                    $delete_stmt = $conn->prepare("DELETE FROM categories WHERE name=?");
+                    $delete_stmt->bind_param("s", $category_name);
+                    $success = $delete_stmt->execute();
+                    $delete_stmt->close();
+                    
+                    return $success ? "Category deleted successfully" : "Error deleting category";
+                } else {
+                    // Decrease the count if it's greater than 0
+                    $update_stmt = $conn->prepare("UPDATE categories SET category_count = category_count - 1 WHERE name=?");
+                    $update_stmt->bind_param("s", $category_name);
+                    $success = $update_stmt->execute();
+                    $update_stmt->close();
+                }
+
     
     // Then delete the service
-    $stmt = $conn->prepare("DELETE FROM services WHERE id = ?");
-    $stmt->bind_param("i", $delete_id);
+    // $stmt = $conn->prepare("DELETE FROM admin_grant WHERE id = ?");
+    // $stmt->bind_param("i", $delete_id);
+    // $stmt->execute();
+    $stmt2 = $conn->prepare("DELETE FROM providers WHERE id = ?");
+    $stmt2->bind_param("i", $delete_id);
+    $stmt1 = $conn->prepare("DELETE FROM services WHERE id = ?");
+    $stmt1->bind_param("i", $delete_id);
     
-    if ($stmt->execute()) {
+    if ($stmt1->execute() && $stmt2->execute()) {
         $_SESSION['message'] = "Service deleted successfully";
     } else {
         $_SESSION['error'] = "Error deleting service: " . $conn->error;
@@ -40,6 +90,8 @@ if (isset($_POST['delete_id'])) {
     
     header('Location: admin_delete.php');
     exit();
+}
+}
 }
 
 // Fetch all services with categories
@@ -54,6 +106,7 @@ if ($result) {
     $result->free();
 }
 ?>
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -209,14 +262,15 @@ if ($result) {
             .btn-primary:hover {
                 background: var(--secondary-color);
             }
-    </style>
+</style>
 </head>
 <body>
     <div class="navbar">
-    <a href="admin_dashboard.php">Dashboard Home</a>
-    <a href="admin.php">Grant Service</a>
-    <a href="upload.php">Bulk Upload Services</a>
-    <a href="admin_delete.php">Delete Services</a>
+        <a href="admin_dashboard.php">Dashboard Home</a>
+        <a href="admin.php">Grant Service</a>
+        <a href="upload.php">Bulk Upload Services</a>
+        <a href="admin_contact_msg.php">User Messages</a>
+        <a href="admin_logout.php" class="logout-btn">Logout</a>
         </div>
     <div class="service-container">
         <div class="service-header">
@@ -255,12 +309,13 @@ if ($result) {
             <?php else: ?>
                 <?php foreach ($services as $service): ?>
                     <div class="service-card">
-                      <?php // $data = json_decode($service['image_names'], true); ?>
-                            <img src="./uploads/<?php echo(data[0]); ?>" alt="<?= htmlspecialchars($service['bussiness_name']); ?>" class="service-image">
-                            <div class="service-image" style="background: #eee; display: flex; align-items: center; justify-content: center;">
-                                <i class="fas fa-image" style="font-size: 3rem; color: #aaa;"></i>
+                     
+                         <?php  $data = json_decode($service['image_names'], true); ?>
+                         <div class="service-image" style="background: #eee; display: flex; align-items: center; justify-content: center;">
+                                <img src="./uploads/<?= htmlspecialchars($data[0]); ?>" alt="<?= htmlspecialchars($service['bussiness_name']); ?>" class="service-image">
+                                <!-- <i class="fas fa-image" style="font-size: 3rem; color: #aaa;"></i> -->
                             </div>
-                        
+
                         <?php if (!empty($service['service'])): ?>
                             <span class="service-category"><?= htmlspecialchars($service['service']); ?></span>
                         <?php endif; ?>
@@ -271,9 +326,9 @@ if ($result) {
                         </div>
                         
                         <div class="service-actions">
-                            <form method="POST" onsubmit="return confirm('Are you sure you want to delete this service?');">
+                            <form method="POST" action="admin_delete.php">
                                 <input type="hidden" name="delete_id" value="<?= $service['id']; ?>">
-                                <button type="submit" class="delete-btn">
+                                <button type="submit" class="delete-btn" name="delete_service">
                                     <i class="fas fa-trash"></i> Delete
                                 </button>
                             </form>
