@@ -202,7 +202,7 @@ if(isset($_POST['login'])){
         <input type="password" name="password" placeholder="Enter your Password" required>
         <input type="submit" name="login" value="Log In">
         
-        <p><a href="forgotpassword.php">Forgot Password?</a></p>
+        <p><a href="forgotpassword.php?role=customers">Forgot Password?</a></p>
         <p><a href="new_register_cust.php">Don't have an account? Register</a></p>
         <p><a href="new_provider_login.php">Login as Service Provider</a></p>
     </form>

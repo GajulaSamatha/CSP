@@ -23,13 +23,20 @@ $conn->query("SET time_zone = '+05:30'");
 $step = isset($_GET['step']) ? $_GET['step'] : 1;
 $error = '';
 $success = '';
+$role = isset($_GET['role']) ? $_GET['role'] : 'customers';
+$_SESSION['reset_role'] = $role;
 
 // Step 1: Enter email and send OTP
 if($step == 1 && isset($_POST['send_otp'])) {
     $email = $conn->real_escape_string($_POST['email']);
     
     // Check if email exists
-    $sql = "SELECT id FROM customers WHERE email=?";
+        // Check if email exists in the selected role table
+        if ($role == 'customer') {
+            $sql = "SELECT id FROM customers WHERE email=?";
+        } else {
+            $sql = "SELECT id FROM providers WHERE email=?";
+        }
     $stmt = $conn->prepare($sql);
     $stmt->bind_param("s", $email);
     $stmt->execute();
@@ -189,10 +196,14 @@ if($step == 3 && isset($_POST['reset_password'])) {
     if($newPassword === $confirmPassword) {
         if(strlen($newPassword) >= 6) {
             // Hash the new password
-           
+           if ($role == 'customer') {
+                $sql = "UPDATE customers SET password=? WHERE email=?";
+            } else {
+                $sql = "UPDATE providers SET password=? WHERE email=?";
+            }
             
             // Update password in database
-            $sql = "UPDATE customers SET password=? WHERE email=?";
+            
             $stmt = $conn->prepare($sql);
             $stmt->bind_param("ss", $newPassword, $email);
             
@@ -519,10 +530,16 @@ if($step == 3 && isset($_POST['reset_password'])) {
                 <div class="success-message"><?php echo htmlspecialchars($success); ?></div>
             <?php endif; ?>
             
-            <p><a href="new_login.php">Go to Login</a></p>
+            <p>
+                <?php if ($_SESSION['reset_role'] == 'customers'): ?>
+                    <a href="new_login.php">Go to Customer Login</a>
+                <?php elseif ($_SESSION['reset_role'] == 'providers'): ?>
+                    <a href="new_provider_login.php">Go to Provider Login</a>
+                <?php else: ?>
+                    <a href="index.php">Go to Login</a>
+                <?php endif; ?>
+            </p>
         <?php endif; ?>
-        
-        <p><a href="new_login.php">Back to Login</a></p>
     </div>
 
     <script>
