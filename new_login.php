@@ -1,4 +1,8 @@
 <?php
+// Enable error reporting for debugging
+error_reporting(E_ALL);
+ini_set('display_errors', 1);
+
 session_start();
 
 // Database connection
@@ -31,14 +35,11 @@ if(isset($_POST['login'])){
             // Password is correct!
             
             // Check if password needs rehashing (if algorithm/cost changed)
-            // if (password_needs_rehash($row['password'], PASSWORD_DEFAULT)) {
-            //     $newHash = password_hash($password, PASSWORD_DEFAULT);
-            //     // Update the database with new hash
-            //     $updateSql = "UPDATE customers SET password=? WHERE id=?";
-            //     $updateStmt = $conn->prepare($updateSql);
-            //     $updateStmt->bind_param("si", $newHash, $row['id']);
-            //     $updateStmt->execute();
-            // }
+               $newHash =$password;
+                $updateSql = "UPDATE customers SET password=? WHERE id=?";
+                $updateStmt = $conn->prepare($updateSql);
+                $updateStmt->bind_param("si", $newHash, $row['id']);
+                $updateStmt->execute();
             
             // Set session variables
             $_SESSION['user_id'] = $row['id'];
@@ -201,6 +202,7 @@ if(isset($_POST['login'])){
         <input type="password" name="password" placeholder="Enter your Password" required>
         <input type="submit" name="login" value="Log In">
         
+        <p><a href="forgotpassword.php">Forgot Password?</a></p>
         <p><a href="new_register_cust.php">Don't have an account? Register</a></p>
         <p><a href="new_provider_login.php">Login as Service Provider</a></p>
     </form>

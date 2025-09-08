@@ -345,11 +345,127 @@ if ($userLat && $userLon) {
             box-shadow: var(--shadow);
             transition: var(--transition);
             position: relative;
+            opacity: 0;
+            transform: translateY(30px);
+            animation: none;
         }
 
+        .service-card.animate {
+            animation: slideInUp 0.8s ease-out forwards;
+        }
+
+        @keyframes slideInUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes fadeInScale {
+            from {
+                opacity: 0;
+                transform: scale(0.9) translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: scale(1) translateY(0);
+            }
+        }
+
+        @keyframes slideInLeft {
+            from {
+                opacity: 0;
+                transform: translateX(-30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+
+        @keyframes slideInRight {
+            from {
+                opacity: 0;
+                transform: translateX(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+
+        .service-card.animate-scale {
+            animation: fadeInScale 0.8s ease-out forwards;
+        }
+
+        .service-card.animate-left {
+            animation: slideInLeft 0.8s ease-out forwards;
+        }
+
+        .service-card.animate-right {
+            animation: slideInRight 0.8s ease-out forwards;
+        }
+
+        /* Skeleton Loading Cards */
+        .skeleton-card {
+            background: white;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: var(--shadow);
+            position: relative;
+        }
+
+        .skeleton-image {
+            height: 180px;
+            background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+            background-size: 200% 100%;
+            animation: skeleton-loading 1.5s infinite;
+        }
+
+        .skeleton-content {
+            padding: 1.5rem;
+        }
+
+        .skeleton-title {
+            height: 20px;
+            background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+            background-size: 200% 100%;
+            animation: skeleton-loading 1.5s infinite;
+            border-radius: 4px;
+            margin-bottom: 10px;
+        }
+
+        .skeleton-text {
+            height: 14px;
+            background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+            background-size: 200% 100%;
+            animation: skeleton-loading 1.5s infinite;
+            border-radius: 4px;
+            margin-bottom: 8px;
+        }
+
+        .skeleton-text.short {
+            width: 60%;
+        }
+
+        @keyframes skeleton-loading {
+            0% {
+                background-position: 200% 0;
+            }
+            100% {
+                background-position: -200% 0;
+            }
+        }
+
+        /* Improved hover effects */
         .service-card:hover {
             transform: translateY(-5px);
             box-shadow: 0 8px 20px rgba(0, 0, 0, 0.12);
+            transition: all 0.3s ease;
         }
 
         .service-badge {
@@ -573,8 +689,9 @@ if ($userLat && $userLon) {
         </form>
 
         <div class="service-grid">
+            <?php $cardIndex = 0; ?>
             <?php foreach ($services as $service): ?>
-                <div class="service-card">
+                <div class="service-card" data-card="<?= $cardIndex ?>">
                     <div class="service-badge">
                         <?= htmlspecialchars($service['service']) ?>
                     </div>
@@ -641,6 +758,7 @@ if ($userLat && $userLon) {
                     </div>
                     <h4 style="margin-top:40px;background:black;color:white;padding:10px 20px;"><?= htmlspecialchars($service['status_time']) ?></h4>
                 </div>
+                <?php $cardIndex++; ?>
             <?php endforeach; ?>
         </div>
     </div>
@@ -676,7 +794,103 @@ if ($userLat && $userLon) {
         } else {
             alert("Geolocation not available");
         }
+
+        // Animate service cards
+        animateServiceCards();
     };
+
+    function animateServiceCards() {
+        const serviceCards = document.querySelectorAll('.service-card');
+        const animationTypes = ['animate', 'animate-scale', 'animate-left', 'animate-right'];
+        
+        serviceCards.forEach((card, index) => {
+            // Calculate delay based on card position (staggered effect)
+            const delay = index * 150; // 150ms delay between each card
+            
+            // Choose animation type based on card position
+            let animationType;
+            if (index % 3 === 0) {
+                animationType = 'animate-left';   // Left column - slide from left
+            } else if (index % 3 === 1) {
+                animationType = 'animate-scale';  // Middle column - scale effect
+            } else {
+                animationType = 'animate-right';  // Right column - slide from right
+            }
+            
+            // Apply animation with delay
+            setTimeout(() => {
+                card.classList.add(animationType);
+                
+                // Add a subtle bounce effect on hover after animation
+                card.addEventListener('mouseenter', () => {
+                    if (!card.classList.contains('hover-bounce')) {
+                        card.style.transform = 'translateY(-8px) scale(1.02)';
+                        card.style.transition = 'all 0.3s ease';
+                    }
+                });
+                
+                card.addEventListener('mouseleave', () => {
+                    card.style.transform = 'translateY(0) scale(1)';
+                });
+                
+            }, delay);
+        });
+
+        // Add loading skeleton effect for very slow connections
+        if (serviceCards.length === 0) {
+            showLoadingSkeletons();
+        }
+    }
+
+    function showLoadingSkeletons() {
+        const serviceGrid = document.querySelector('.service-grid');
+        if (serviceGrid) {
+            // Create 6 skeleton cards
+            for (let i = 0; i < 6; i++) {
+                const skeleton = document.createElement('div');
+                skeleton.className = 'service-card skeleton-card';
+                skeleton.innerHTML = `
+                    <div class="skeleton-image"></div>
+                    <div class="skeleton-content">
+                        <div class="skeleton-title"></div>
+                        <div class="skeleton-text"></div>
+                        <div class="skeleton-text short"></div>
+                    </div>
+                `;
+                serviceGrid.appendChild(skeleton);
+                
+                // Animate skeleton cards
+                setTimeout(() => {
+                    skeleton.classList.add('animate');
+                }, i * 100);
+            }
+        }
+    }
+
+    // Intersection Observer for cards that come into view later (for very long lists)
+    if ('IntersectionObserver' in window) {
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting && !entry.target.classList.contains('animate')) {
+                    const card = entry.target;
+                    const index = Array.from(document.querySelectorAll('.service-card')).indexOf(card);
+                    const animationType = index % 3 === 0 ? 'animate-left' : 
+                                        index % 3 === 1 ? 'animate-scale' : 'animate-right';
+                    
+                    setTimeout(() => {
+                        card.classList.add(animationType);
+                    }, 100);
+                }
+            });
+        }, { threshold: 0.1 });
+
+        // Observe all service cards
+        document.addEventListener('DOMContentLoaded', () => {
+            document.querySelectorAll('.service-card').forEach(card => {
+                observer.observe(card);
+            });
+        });
+    }
     </script>
 </body>
 </html>

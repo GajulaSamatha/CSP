@@ -180,6 +180,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['login'])) {
         </form>
         
         <div class="links">
+             <p><a href="forgotpassword.php">Forgot Password?</a></p>
             <a href="new_register_prov.php">Don't have an account? Register</a>
             <a href="new_login.php">Login as Customer</a>
         </div>
