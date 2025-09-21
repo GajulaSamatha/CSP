@@ -21,5 +21,5 @@ Under the guidance of **Prof. P. Chenna Reddy (Principal, JNTUA)**, our team foc
 ## Technology Stack
 
 - Frontend: HTML, CSS, JavaScript, Bootstrap
-- Backend: [Your backend tech, if any]
-- Database: [Your database, if any]
+- Backend: PHP
+- Database:MySQL
