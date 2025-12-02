@@ -1,23 +1,58 @@
 ﻿<?php
 
-require_once __DIR__ . '/../src/mysqli_compat.php';
+use PHPMailer\PHPMailer\PHPMailer;
+use PHPMailer\PHPMailer\Exception;
+
+// Load Composer's autoloader and our App namespace
+require_once __DIR__ . '/../vendor/autoload.php';
+
 // Enable error reporting for debugging
 error_reporting(E_ALL);
 ini_set('display_errors', 1);
+
+// Load environment variables
+$dotenv = Dotenv\Dotenv::createImmutable(__DIR__ . '/../');
+$dotenv->load();
 
 // Set timezone to ensure consistency
 date_default_timezone_set('Asia/Kolkata');
 
 session_start();
 
-// Include PHPMailer configuration
-require_once 'phpmailer_config.php';
+// --- Email Sending Function ---
+// We define this here to use environment variables securely
+function sendOTPEmail($email, $otp) {
+    $mail = new PHPMailer(true);
+    try {
+        //Server settings from .env file
+        $mail->isSMTP();
+        $mail->Host       = $_ENV['MAIL_HOST'];
+        $mail->SMTPAuth   = true;
+        $mail->Username   = $_ENV['MAIL_USERNAME'];
+        $mail->Password   = $_ENV['MAIL_PASSWORD'];
+        $mail->SMTPSecure = PHPMailer::ENCRYPTION_STARTTLS;
+        $mail->Port       = $_ENV['MAIL_PORT'];
 
-// Database connection
-$conn = new mysqli("localhost", "root", "1234", "nandyal_dial");
-if ($conn->connect_error) {
-    die("Connection failed: " . $conn->connect_error);
+        //Recipients
+        $mail->setFrom($_ENV['MAIL_FROM_ADDRESS'], $_ENV['MAIL_FROM_NAME']);
+        $mail->addAddress($email);
+
+        //Content
+        $mail->isHTML(true);
+        $mail->Subject = 'Your Password Reset OTP';
+        $mail->Body    = 'Your One-Time Password (OTP) for password reset is: <b>' . $otp . '</b>. It is valid for 15 minutes.';
+        $mail->AltBody = 'Your One-Time Password (OTP) for password reset is: ' . $otp . '. It is valid for 15 minutes.';
+
+        return $mail->send();
+    } catch (Exception $e) {
+        // Log the detailed error message for debugging, but don't show it to the user.
+        error_log("Mailer Error: " . $mail->ErrorInfo);
+        return false;
+    }
 }
+
+// Use the secure database connection from Db.php
+$conn = App\Db::getConnection();
 
 // Set MySQL timezone to match PHP
 $conn->query("SET time_zone = '+05:30'");
@@ -30,29 +65,28 @@ $_SESSION['reset_role'] = $role;
 
 // Step 1: Enter email and send OTP
 if($step == 1 && isset($_POST['send_otp'])) {
-    $email = $conn->real_escape_string($_POST['email']);
-    
+    $email = $_POST['email'];
+
     // Check if email exists
         // Check if email exists in the selected role table
         if ($role == 'customer') {
-            $sql = "SELECT id FROM customers WHERE email=?";
+            $sql = "SELECT id FROM customers WHERE email = ?";
         } else {
-            $sql = "SELECT id FROM providers WHERE email=?";
+            $sql = "SELECT id FROM providers WHERE email = ?";
         }
     $stmt = $conn->prepare($sql);
-    $stmt->bind_param("s", $email);
-    $stmt->execute();
-    $result = $stmt->get_result();
-    
-    if ($result->num_rows === 1) {
+    $stmt->execute([$email]);
+    $result = $stmt->fetch();
+
+    if ($result) {
         // Generate 6-digit OTP
         $otp = sprintf("%06d", mt_rand(1, 999999));
-        
+
         // Store OTP in database (create table if needed)
         // First check if table exists, if not create it
         $checkTable = "SHOW TABLES LIKE 'password_reset_otp'";
         $tableExists = $conn->query($checkTable);
-        
+
         if($tableExists->num_rows == 0) {
             $createTable = "CREATE TABLE `password_reset_otp` (
                 `id` int(11) NOT NULL AUTO_INCREMENT,
@@ -65,22 +99,18 @@ if($step == 1 && isset($_POST['send_otp'])) {
             ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4";
             $conn->query($createTable);
         }
-        
+
         // Use MySQL's DATE_ADD function for consistent timezone handling
-        $sql = "INSERT INTO password_reset_otp (email, otp, expiry_time, created_at) 
-                VALUES (?, ?, DATE_ADD(NOW(), INTERVAL 15 MINUTE), NOW()) 
-                ON DUPLICATE KEY UPDATE 
-                otp=VALUES(otp), 
-                expiry_time=DATE_ADD(NOW(), INTERVAL 15 MINUTE), 
-                created_at=NOW()";
+        $sql = "INSERT INTO password_reset_otp (email, otp, expiry_time, created_at) VALUES (?, ?, DATE_ADD(NOW(), INTERVAL 15 MINUTE), NOW()) ON DUPLICATE KEY UPDATE otp=VALUES(otp), expiry_time=VALUES(expiry_time), created_at=NOW()";
         $stmt = $conn->prepare($sql);
-        
+
         if(!$stmt) {
-            $error = "Database prepare error: " . $conn->error;
+            // PDO throws exceptions, so this 'if' is less likely to be hit.
+            $error = "Database prepare error.";
         } else {
-            $stmt->bind_param("ss", $email, $otp);
-            
-            if($stmt->execute()) {
+            try {
+                $stmt->execute([$email, $otp]);
+
                 // Try to send email
                 try {
                     if(sendOTPEmail($email, $otp)) {
@@ -93,8 +123,9 @@ if($step == 1 && isset($_POST['send_otp'])) {
                 } catch (Exception $e) {
                     $error = "Email sending error: " . $e->getMessage();
                 }
-            } else {
-                $error = "Database error: " . $stmt->error;
+            } catch (\PDOException $e) {
+                error_log("Database error: " . $e->getMessage());
+                $error = "A database error occurred.";
             }
         }
     } else {
@@ -108,26 +139,23 @@ if($step == 2 && isset($_POST['verify_otp'])) {
         header("Location: forgotpassword.php?step=1");
         exit();
     }
-    
+
     $otp = trim($_POST['otp']);
     $email = $_SESSION['reset_email'];
-    
-    $sql = "SELECT otp, expiry_time, 
+
+    $sql = "SELECT otp, expiry_time,
             NOW() as current_db_time,
             (expiry_time > NOW()) as is_valid,
-            TIMESTAMPDIFF(MINUTE, NOW(), expiry_time) as minutes_remaining
-            FROM password_reset_otp 
-            WHERE email=?";
+            TIMESTAMPDIFF(MINUTE, NOW(), expiry_time) as minutes_remaining FROM password_reset_otp WHERE email = ?";
     $stmt = $conn->prepare($sql);
-    $stmt->bind_param("s", $email);
-    $stmt->execute();
-    $result = $stmt->get_result();
-    
-    if ($result->num_rows === 1) {
-        $row = $result->fetch_assoc();
+    $stmt->execute([$email]);
+    $row = $stmt->fetch();
+
+
+    if ($row) {
         $dbOTP = trim($row['otp']);
         $inputOTP = trim($otp);
-        
+
         // Debug logging with more detailed information
         $debugLog = date('Y-m-d H:i:s') . " - OTP Debug for $email:\n";
         $debugLog .= "Input OTP: '$inputOTP' (length: " . strlen($inputOTP) . ")\n";
@@ -138,7 +166,7 @@ if($step == 2 && isset($_POST['verify_otp'])) {
         $debugLog .= "Is valid (not expired): " . ($row['is_valid'] ? 'YES' : 'NO') . "\n";
         $debugLog .= "Minutes remaining: " . $row['minutes_remaining'] . "\n\n";
         file_put_contents('otp_debug.txt', $debugLog, FILE_APPEND);
-        
+
         // Check if OTP is expired first
         if (!$row['is_valid']) {
             $error = "OTP has expired. Please request a new one. (Expired " . abs($row['minutes_remaining']) . " minutes ago)";
@@ -160,20 +188,17 @@ if($step == 2 && isset($_POST['resend_otp'])) {
         header("Location: forgotpassword.php?step=1");
         exit();
     }
-    
+
     $email = $_SESSION['reset_email'];
-    
+
     // Generate new OTP
     $otp = sprintf("%06d", mt_rand(1, 999999));
-    
+
     // Update OTP in database using MySQL time functions
-    $sql = "UPDATE password_reset_otp 
-            SET otp=?, expiry_time=DATE_ADD(NOW(), INTERVAL 15 MINUTE), created_at=NOW() 
-            WHERE email=?";
+    $sql = "UPDATE password_reset_otp SET otp = ?, expiry_time = DATE_ADD(NOW(), INTERVAL 15 MINUTE), created_at = NOW() WHERE email = ?";
     $stmt = $conn->prepare($sql);
-    $stmt->bind_param("ss", $otp, $email);
-    
-    if($stmt->execute()) {
+
+    if($stmt->execute([$otp, $email])) {
         if(sendOTPEmail($email, $otp)) {
             $success = "New OTP has been sent to your email.";
         } else {
@@ -190,32 +215,30 @@ if($step == 3 && isset($_POST['reset_password'])) {
         header("Location: forgotpassword.php?step=1");
         exit();
     }
-    
+
     $newPassword = $_POST['new_password'];
     $confirmPassword = $_POST['confirm_password'];
     $email = $_SESSION['reset_email'];
-    
+
     if($newPassword === $confirmPassword) {
         if(strlen($newPassword) >= 6) {
             // Hash the new password
+            $hashedPassword = password_hash($newPassword, PASSWORD_DEFAULT);
            if ($role == 'customer') {
-                $sql = "UPDATE customers SET password=? WHERE email=?";
+                $sql = "UPDATE customers SET password = ? WHERE email = ?";
             } else {
-                $sql = "UPDATE providers SET password=? WHERE email=?";
+                $sql = "UPDATE providers SET password = ? WHERE email = ?";
             }
-            
+
             // Update password in database
-            
             $stmt = $conn->prepare($sql);
-            $stmt->bind_param("ss", $newPassword, $email);
-            
-            if($stmt->execute()) {
+
+            if($stmt->execute([$hashedPassword, $email])) {
                 // Delete used OTP
-                $sql = "DELETE FROM password_reset_otp WHERE email=?";
+                $sql = "DELETE FROM password_reset_otp WHERE email = ?";
                 $stmt = $conn->prepare($sql);
-                $stmt->bind_param("s", $email);
                 $stmt->execute();
-                
+
                 // Clear session
                 unset($_SESSION['reset_email']);
                 unset($_SESSION['otp_verified']);
@@ -452,66 +475,66 @@ if($step == 3 && isset($_POST['reset_password'])) {
     <div class="forgot-container">
         <!-- Steps indicator -->
         <div class="steps">
-            <div class="step <?php 
-require_once __DIR__ . '/../src/mysqli_compat.php';
+            <div class="step <?php
+
 echo $step >= 1 ? ($step > 1 ? 'completed' : 'active') : ''; ?>">1</div>
-            <div class="step <?php 
-require_once __DIR__ . '/../src/mysqli_compat.php';
+            <div class="step <?php
+
 echo $step >= 2 ? ($step > 2 ? 'completed' : 'active') : ''; ?>">2</div>
-            <div class="step <?php 
-require_once __DIR__ . '/../src/mysqli_compat.php';
+            <div class="step <?php
+
 echo $step >= 3 ? ($step > 3 ? 'completed' : 'active') : ''; ?>">3</div>
         </div>
 
-        <?php 
-require_once __DIR__ . '/../src/mysqli_compat.php';
+        <?php
+
 if($step == 1): ?>
             <!-- Step 1: Enter Email -->
             <h2>Forgot Password</h2>
             <div class="subtitle">Enter your email address to receive an OTP</div>
-            
-            <?php 
-require_once __DIR__ . '/../src/mysqli_compat.php';
+
+            <?php
+
 if($error): ?>
-                <div class="error-message"><?php 
-require_once __DIR__ . '/../src/mysqli_compat.php';
+                <div class="error-message"><?php
+
 echo htmlspecialchars($error); ?></div>
-            <?php 
-require_once __DIR__ . '/../src/mysqli_compat.php';
+            <?php
+
 endif; ?>
-            
+
             <form method="POST">
                 <input type="email" name="email" placeholder="Enter your Email" required>
                 <input type="submit" name="send_otp" value="Send OTP">
             </form>
-            
-        <?php 
-require_once __DIR__ . '/../src/mysqli_compat.php';
+
+        <?php
+
 elseif($step == 2): ?>
             <!-- Step 2: Enter OTP -->
             <h2>Verify OTP</h2>
             <div class="subtitle">Enter the 6-digit OTP sent to your email</div>
-            
-            <?php 
-require_once __DIR__ . '/../src/mysqli_compat.php';
+
+            <?php
+
 if($error): ?>
-                <div class="error-message"><?php 
-require_once __DIR__ . '/../src/mysqli_compat.php';
+                <div class="error-message"><?php
+
 echo htmlspecialchars($error); ?></div>
-            <?php 
-require_once __DIR__ . '/../src/mysqli_compat.php';
+            <?php
+
 endif; ?>
-            
-            <?php 
-require_once __DIR__ . '/../src/mysqli_compat.php';
+
+            <?php
+
 if(isset($success)): ?>
-                <div class="success-message"><?php 
-require_once __DIR__ . '/../src/mysqli_compat.php';
+                <div class="success-message"><?php
+
 echo htmlspecialchars($success); ?></div>
-            <?php 
-require_once __DIR__ . '/../src/mysqli_compat.php';
+            <?php
+
 endif; ?>
-            
+
             <form method="POST" id="otpForm">
                 <div class="otp-container">
                     <input type="text" class="otp-box" maxlength="1" pattern="[0-9]" required>
@@ -524,30 +547,30 @@ endif; ?>
                 <input type="hidden" name="otp" id="otpValue">
                 <input type="submit" name="verify_otp" value="Verify OTP">
             </form>
-            
+
             <form method="POST" style="margin-top: 10px;">
                 <input type="submit" name="resend_otp" value="Resend OTP" style="background: #4caf50; font-size: 14px; padding: 10px;">
             </form>
-            
+
             <p><a href="forgotpassword.php?step=1">Back to email entry</a></p>
-            
-        <?php 
-require_once __DIR__ . '/../src/mysqli_compat.php';
+
+        <?php
+
 elseif($step == 3): ?>
             <!-- Step 3: Reset Password -->
             <h2>Reset Password</h2>
             <div class="subtitle">Enter your new password</div>
-            
-            <?php 
-require_once __DIR__ . '/../src/mysqli_compat.php';
+
+            <?php
+
 if($error): ?>
-                <div class="error-message"><?php 
-require_once __DIR__ . '/../src/mysqli_compat.php';
+                <div class="error-message"><?php
+
 echo htmlspecialchars($error); ?></div>
-            <?php 
-require_once __DIR__ . '/../src/mysqli_compat.php';
+            <?php
+
 endif; ?>
-            
+
             <form method="POST">
                 <div class="password-container">
                     <input type="password" name="new_password" id="newPassword" placeholder="New Password" required>
@@ -559,42 +582,42 @@ endif; ?>
                 </div>
                 <input type="submit" name="reset_password" value="Reset Password">
             </form>
-            
-        <?php 
-require_once __DIR__ . '/../src/mysqli_compat.php';
+
+        <?php
+
 elseif($step == 4): ?>
             <!-- Step 4: Success -->
             <h2>Password Reset Successful!</h2>
-            
-            <?php 
-require_once __DIR__ . '/../src/mysqli_compat.php';
+
+            <?php
+
 if($success): ?>
-                <div class="success-message"><?php 
-require_once __DIR__ . '/../src/mysqli_compat.php';
+                <div class="success-message"><?php
+
 echo htmlspecialchars($success); ?></div>
-            <?php 
-require_once __DIR__ . '/../src/mysqli_compat.php';
+            <?php
+
 endif; ?>
-            
+
             <p>
-                <?php 
-require_once __DIR__ . '/../src/mysqli_compat.php';
+                <?php
+
 if ($_SESSION['reset_role'] == 'customers'): ?>
                     <a href="new_login.php">Go to Customer Login</a>
-                <?php 
-require_once __DIR__ . '/../src/mysqli_compat.php';
+                <?php
+
 elseif ($_SESSION['reset_role'] == 'providers'): ?>
                     <a href="new_provider_login.php">Go to Provider Login</a>
-                <?php 
-require_once __DIR__ . '/../src/mysqli_compat.php';
+                <?php
+
 else: ?>
                     <a href="index.php">Go to Login</a>
-                <?php 
-require_once __DIR__ . '/../src/mysqli_compat.php';
+                <?php
+
 endif; ?>
             </p>
-        <?php 
-require_once __DIR__ . '/../src/mysqli_compat.php';
+        <?php
+
 endif; ?>
     </div>
 
@@ -608,12 +631,12 @@ endif; ?>
                 box.addEventListener('input', function(e) {
                     // Only allow numbers
                     this.value = this.value.replace(/[^0-9]/g, '');
-                    
+
                     // Move to next box if current box is filled
                     if (this.value.length === 1 && index < otpBoxes.length - 1) {
                         otpBoxes[index + 1].focus();
                     }
-                    
+
                     // Update hidden OTP value
                     updateOTPValue();
                 });
@@ -628,18 +651,18 @@ endif; ?>
                 box.addEventListener('paste', function(e) {
                     e.preventDefault();
                     const pastedData = e.clipboardData.getData('text').replace(/[^0-9]/g, '');
-                    
+
                     // Fill boxes with pasted data
                     for (let i = 0; i < Math.min(pastedData.length, otpBoxes.length - index); i++) {
                         if (index + i < otpBoxes.length) {
                             otpBoxes[index + i].value = pastedData[i];
                         }
                     }
-                    
+
                     // Focus on next empty box or last box
                     const nextEmptyIndex = Math.min(index + pastedData.length, otpBoxes.length - 1);
                     otpBoxes[nextEmptyIndex].focus();
-                    
+
                     updateOTPValue();
                 });
             });
@@ -659,12 +682,10 @@ endif; ?>
         function togglePassword(fieldId, eyeIcon) {
             const passwordField = document.getElementById(fieldId);
             const isPassword = passwordField.type === 'password';
-            
+
             passwordField.type = isPassword ? 'text' : 'password';
             eyeIcon.textContent = isPassword ? '🙈' : '👁️';
         }
     </script>
 </body>
 </html>
-
-

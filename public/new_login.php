@@ -1,47 +1,37 @@
-﻿<?php
+﻿﻿<?php
 
-require_once __DIR__ . '/../src/mysqli_compat.php';
+require_once __DIR__ . '/../vendor/autoload.php';
 // Enable error reporting for debugging
 error_reporting(E_ALL);
 ini_set('display_errors', 1);
 
 session_start();
 
-// Database connection
-$conn = new mysqli("localhost", "root", "1234", "nandyal_dial");
-if ($conn->connect_error) {
-    die("Connection failed: " . $conn->connect_error);
-}
+// Use the secure PDO connection from Db.php
+$pdo = App\Db::getConnection();
 
 if(isset($_POST['login'])){
-    $email = $conn->real_escape_string($_POST['email']);
+    $email = $_POST['email'];
     $password = $_POST['password']; // Don't escape passwords - it can corrupt them
 
     // Prepare query to get customer data
     $sql = "SELECT id, first_name, last_name, password FROM customers WHERE email=?";
-    $stmt = $conn->prepare($sql);
+    $stmt = $pdo->prepare($sql);
+    $stmt->execute([$email]);
+    $row = $stmt->fetch(PDO::FETCH_ASSOC);
     
-    if (!$stmt) {
-        die("Prepare failed: " . $conn->error);
-    }
-    
-    $stmt->bind_param("s", $email);
-    $stmt->execute();
-    $result = $stmt->get_result();
-
-    if ($result->num_rows === 1) {
-        $row = $result->fetch_assoc();
-        
+    if ($row) {
         // SECURE PASSWORD VERIFICATION
-        if ($password=== $row['password']) {
+        if (password_verify($password, $row['password'])) {
             // Password is correct!
             
             // Check if password needs rehashing (if algorithm/cost changed)
-               $newHash =$password;
+            if (password_needs_rehash($row['password'], PASSWORD_DEFAULT)) {
+                $newHash = password_hash($password, PASSWORD_DEFAULT);
                 $updateSql = "UPDATE customers SET password=? WHERE id=?";
-                $updateStmt = $conn->prepare($updateSql);
-                $updateStmt->bind_param("si", $newHash, $row['id']);
-                $updateStmt->execute();
+                $updateStmt = $pdo->prepare($updateSql);
+                $updateStmt->execute([$newHash, $row['id']]);
+            }
             
             // Set session variables
             $_SESSION['user_id'] = $row['id'];
@@ -58,9 +48,6 @@ if(isset($_POST['login'])){
     } else {
         $error = "Invalid email or password"; // Same message to prevent user enumeration
     }
-    
-    $stmt->close();
-    $conn->close();
     
     // If we got here, login failed
     header("Location: new_login.php?error=".urlencode($error));
@@ -197,13 +184,13 @@ if(isset($_POST['login'])){
         <div class="subtitle">Welcome back! Please log in to continue.</div>
         
         <?php 
-require_once __DIR__ . '/../src/mysqli_compat.php';
+
 if(isset($_GET['error'])): ?>
             <div class="error-message"><?php 
-require_once __DIR__ . '/../src/mysqli_compat.php';
+
 echo htmlspecialchars($_GET['error']); ?></div>
         <?php 
-require_once __DIR__ . '/../src/mysqli_compat.php';
+
 endif; ?>
         
         <input type="email" name="email" placeholder="Enter your Email" required>
@@ -216,4 +203,3 @@ endif; ?>
     </form>
 </body>
 </html>
-
